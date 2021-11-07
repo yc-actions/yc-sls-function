@@ -29,7 +29,7 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
         environment: | 
           DEBUG=True
           COUNT=1
-        source: | 
+        include: | 
           ./src
           package.json
         exclude: | 
