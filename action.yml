@@ -1,0 +1,64 @@
+name: 'Yandex Cloud Function deploy'
+description: 'GitHub Action to deploy Serverless Function to Yandex Cloud.'
+author: 'Nikolay Matrosov'
+inputs:
+  yc-sa-json-credentials:
+    required: true
+    description: 'Json containing authorized key for Service Account. More info https://cloud.yandex.ru/docs/container-registry/operations/authentication#sa-json'
+  folder-id:
+    required: true
+    description: 'Folder ID'
+  function-name:
+    description: 'Function Name '
+    default: ''
+    required: true
+  bucket:
+    description: 'Object Storage bucket name for code'
+    default: ''
+    required: false
+  runtime:
+    description: 'Runtime for function.'
+    default: ''
+    required: true
+  entrypoint:
+    description: 'Entrypoint for function'
+    default: ''
+    required: true
+  include:
+    description: 'Source directories for cloud function in git repo. Multiline'
+    default: '.'
+    required: false
+  exclude:
+    description: 'Exclude patterns for source directory. Multiline'
+    default: ''
+    required: false
+  memory:
+    description: 'Memory in Mb. Pattern: ^\dMb$'
+    default: '128Mb'
+    required: false
+  environment:
+    description: 'Env variables for function. Multiline'
+    default: ''
+    required: false
+  execution_timeout:
+    description: 'Execution timeout in seconds'
+    default: '5'
+    required: false
+  service-account:
+    description: 'Service account for function'
+    default: ''
+    required: false
+
+outputs:
+  function-id:
+    description: 'Function ID.'
+  version-id:
+    description: 'ID of the newly created function version.'
+
+branding:
+  icon
+  color: blue
+  icon: code
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
