@@ -35,7 +35,7 @@
   "devDependencies": {
     "@types/archiver": "^5.1.1",
     "@types/mustache": "^4.1.2",
-    "@types/node": "^17.0.2",
+    "@types/node": "^17.0.5",
     "@types/stream-buffers": "^3.0.4",
     "@typescript-eslint/eslint-plugin": "^5.8.0",
     "@typescript-eslint/parser": "^5.8.0",
