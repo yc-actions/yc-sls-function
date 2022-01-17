@@ -33,7 +33,7 @@
     "minimatch": "^3.0.4"
   },
   "devDependencies": {
-    "@types/archiver": "^5.1.1",
+    "@types/archiver": "^5.3.1",
     "@types/mustache": "^4.1.2",
     "@types/node": "^17.0.5",
     "@types/stream-buffers": "^3.0.4",
