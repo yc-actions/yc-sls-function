@@ -8,6 +8,7 @@ import {test} from '@jest/globals';
 test.skip('test runs', () => {
   process.env['INPUT_INCLUDE'] = '.\n./package.json';
   process.env['INPUT_EXCLUDE'] = '**/*.txt\n**/*.yaml\n**/*.ts';
+  process.env['INPUT_TAGS'] = 'foo\nbar';
 
   const np = process.execPath;
   const ip = path.join(__dirname, '..', 'lib', 'main.js');

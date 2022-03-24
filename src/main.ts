@@ -4,25 +4,22 @@ import archiver from 'archiver';
 import * as streamBuffers from 'stream-buffers';
 import minimatch from 'minimatch';
 
-import {StorageObject} from '@nikolay.matrosov/yc-ts-sdk/lib/src/storage/v1beta/storageObject';
-import {StorageService} from '@nikolay.matrosov/yc-ts-sdk/lib/src/storage/v1beta';
-import {Session} from '@nikolay.matrosov/yc-ts-sdk';
-import {completion, getMetadata} from '@nikolay.matrosov/yc-ts-sdk/lib/src/operation';
-import {FunctionService} from '@nikolay.matrosov/yc-ts-sdk/lib/api/serverless/functions/v1';
-import {fromServiceAccountJsonFile} from '@nikolay.matrosov/yc-ts-sdk/lib/src/TokenService/iamTokenService';
+import {decodeMessage, serviceClients, Session, waitForOperation} from '@yandex-cloud/nodejs-sdk';
+import {KB, parseMemory} from './memory';
+import * as fs from 'fs';
+import {fromServiceAccountJsonFile} from './service-account-json';
 import {
   CreateFunctionMetadata,
   CreateFunctionRequest,
   CreateFunctionVersionMetadata,
   CreateFunctionVersionRequest,
-  FunctionServiceService,
   ListFunctionsRequest,
-} from '@nikolay.matrosov/yc-ts-sdk/lib/generated/yandex/cloud/serverless/functions/v1/function_service';
-import {Client} from 'nice-grpc';
-import {Operation} from '@nikolay.matrosov/yc-ts-sdk/lib/generated/yandex/cloud/operation/operation';
-import {KB, parseMemory} from './memory';
-import {Package} from '@nikolay.matrosov/yc-ts-sdk/lib/generated/yandex/cloud/serverless/functions/v1/function';
-import * as fs from 'fs';
+} from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function_service';
+import {Package} from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function';
+import {Operation} from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/operation/operation';
+import {StorageServiceImpl} from './storage';
+import {StorageObject} from './storage/storage-object';
+import {IIAmCredentials} from '@yandex-cloud/nodejs-sdk/dist/types';
 
 type ActionInputs = {
   folderId: string;
@@ -37,9 +34,15 @@ type ActionInputs = {
   serviceAccount: string;
   bucket: string;
   description: string;
+  tags: string[];
 };
 
-async function uploadToS3(bucket: string, functionId: string, session: Session, fileContents: Buffer): Promise<string> {
+async function uploadToS3(
+  bucket: string,
+  functionId: string,
+  sessionConfig: IIAmCredentials,
+  fileContents: Buffer,
+): Promise<string> {
   const {GITHUB_SHA} = process.env;
 
   if (!GITHUB_SHA) {
@@ -51,19 +54,17 @@ async function uploadToS3(bucket: string, functionId: string, session: Session, 
   const bucketObjectName = `${functionId}/${GITHUB_SHA}.zip`;
   core.info(`Upload to bucket: "${bucket}/${bucketObjectName}"`);
 
-  const storageService = StorageService(session);
+  const storageService = new StorageServiceImpl(sessionConfig);
 
   const storageObject = StorageObject.fromBuffer(bucket, bucketObjectName, fileContents);
   await storageService.putObject(storageObject);
   return bucketObjectName;
 }
 
-async function getOrCreateFunctionId(
-  session: Session,
-  functionService: Client<typeof FunctionServiceService, {}>,
-  {folderId, functionName}: ActionInputs,
-): Promise<string> {
+async function getOrCreateFunctionId(session: Session, {folderId, functionName}: ActionInputs): Promise<string> {
   core.startGroup('Find function id');
+  const functionService = session.client(serviceClients.FunctionServiceClient);
+
   const res = await functionService.list(
     ListFunctionsRequest.fromPartial({
       folderId,
@@ -86,9 +87,16 @@ async function getOrCreateFunctionId(
         description: `Created from ${repo.owner}/${repo.repo}`,
       }),
     );
-    await completion(op, session);
-    functionId = (getMetadata(op) as CreateFunctionMetadata).functionId;
-    core.info(`There was no function named '${functionName}' in the folder. So it was created. Id is '${functionId}'`);
+    const finishedOp = await waitForOperation(op, session);
+    if (finishedOp.metadata) {
+      functionId = decodeMessage<CreateFunctionMetadata>(finishedOp.metadata).functionId;
+      core.info(
+        `There was no function named '${functionName}' in the folder. So it was created. Id is '${functionId}'`,
+      );
+    } else {
+      core.error(`Failed to create function '${functionName}'`);
+      throw new Error('Failed to create function');
+    }
   }
   core.setOutput('function-id', functionId);
   core.endGroup();
@@ -119,6 +127,7 @@ async function run(): Promise<void> {
       serviceAccount: core.getInput('service-account', {required: false}),
       bucket: core.getInput('bucket', {required: false}),
       description: core.getInput('description', {required: false}),
+      tags: core.getMultilineInput('tags', {required: false}),
     };
 
     core.info('Function inputs set');
@@ -129,15 +138,14 @@ async function run(): Promise<void> {
 
     // Initialize SDK with your token
     const session = new Session({serviceAccountJson});
-    const functionService = FunctionService(session);
 
-    const functionId = await getOrCreateFunctionId(session, functionService, inputs);
+    const functionId = await getOrCreateFunctionId(session, inputs);
     let bucketObjectName = '';
     if (inputs.bucket) {
-      bucketObjectName = await uploadToS3(inputs.bucket, functionId, session, fileContents);
+      bucketObjectName = await uploadToS3(inputs.bucket, functionId, serviceAccountJson, fileContents);
     }
 
-    await createFunctionVersion(session, functionService, functionId, fileContents, bucketObjectName, inputs);
+    await createFunctionVersion(session, functionId, fileContents, bucketObjectName, inputs);
 
     core.setOutput('time', new Date().toTimeString());
   } catch (error) {
@@ -160,7 +168,6 @@ function handleOperationError(operation: Operation): void {
 
 async function createFunctionVersion(
   session: Session,
-  functionService: Client<typeof FunctionServiceService, {}>,
   functionId: string,
   fileContents: Buffer,
   bucketObjectName: string,
@@ -185,7 +192,10 @@ async function createFunctionVersion(
       description: inputs.description,
       environment: parseEnvironmentVariables(inputs.environment),
       executionTimeout: {seconds: inputs.executionTimeout},
+      tag: inputs.tags,
     });
+
+    const functionService = session.client(serviceClients.FunctionServiceClient);
 
     //get from bucket if supplied
     if (inputs.bucket) {
@@ -200,12 +210,17 @@ async function createFunctionVersion(
     }
     // Create new version
     const operation = await functionService.createVersion(request);
-    await completion(operation, session);
+    await waitForOperation(operation, session);
 
     handleOperationError(operation);
     core.info('Operation complete');
-
-    const metadata = getMetadata(operation) as CreateFunctionVersionMetadata;
+    let metadata;
+    if (operation.metadata) {
+      metadata = decodeMessage<CreateFunctionVersionMetadata>(operation.metadata);
+    } else {
+      core.error(`Failed to create function version`);
+      throw new Error('Failed to create function version');
+    }
     core.setOutput('version-id', metadata.functionVersionId);
   } finally {
     core.endGroup();

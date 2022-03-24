@@ -17,7 +17,7 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
 ```yaml
     - name: Deploy Function
       id: sls-func
-      uses: yc-actions/yc-sls-function@v1
+      uses: yc-actions/yc-sls-function@v2
       with:
         yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
         bucket: ${{ secrets.BUCKET }}
@@ -34,6 +34,9 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
           package.json
         exclude: | 
           **/*.ts
+        tags: |
+          ${{ GITHUB_SHA::6 }}
+          foo
 ```
 `yc-sa-json-credentials` should contain JSON with authorized key for Service Account. More info in [Yandex Cloud IAM documentation](https://cloud.yandex.ru/docs/container-registry/operations/authentication#sa-json).
 
