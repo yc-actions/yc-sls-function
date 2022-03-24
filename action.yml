@@ -48,6 +48,10 @@ inputs:
     description: 'Service account for function'
     default: ''
     required: false
+  tags:
+    description: 'Version tags. Multiline'
+    default: ''
+    required: false
 
 outputs:
   function-id:
