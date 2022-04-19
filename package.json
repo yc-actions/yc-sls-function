@@ -28,7 +28,7 @@
     "@actions/core": "^1.6.0",
     "@actions/github": "^5.0.1",
     "@yandex-cloud/nodejs-sdk": "2.0.1",
-    "archiver": "^5.3.0",
+    "archiver": "^5.3.1",
     "stream-buffers": "^3.0.2",
     "minimatch": "^5.0.1",
     "minimist": ">=1.2.6",
