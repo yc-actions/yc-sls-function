@@ -40,7 +40,7 @@ inputs:
     description: 'Env variables for function. Multiline'
     default: ''
     required: false
-  execution_timeout:
+  execution-timeout:
     description: 'Execution timeout in seconds'
     default: '5'
     required: false
