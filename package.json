@@ -30,7 +30,7 @@
     "@yandex-cloud/nodejs-sdk": "2.1.0",
     "archiver": "^5.3.1",
     "stream-buffers": "^3.0.2",
-    "minimatch": "^5.0.1",
+    "minimatch": "^5.1.0",
     "minimist": ">=1.2.6",
     "long": "4.0.0"
   },
