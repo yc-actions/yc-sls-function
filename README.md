@@ -17,7 +17,7 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
 ```yaml
     - name: Deploy Function
       id: sls-func
-      uses: yc-actions/yc-sls-function@v2
+      uses: yc-actions/yc-sls-function@v2.0.0
       with:
         yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
         bucket: ${{ secrets.BUCKET }}
