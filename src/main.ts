@@ -119,7 +119,7 @@ async function run(): Promise<void> {
       functionName: core.getInput('function-name', {required: true}),
       runtime: core.getInput('runtime', {required: true}),
       entrypoint: core.getInput('entrypoint', {required: true}),
-      memory: parseMemory(core.getInput('revision-memory', {required: false}) || '128Mb'),
+      memory: parseMemory(core.getInput('memory', {required: false}) || '128Mb'),
       include: core.getMultilineInput('include', {required: false}),
       excludePattern: core.getMultilineInput('exclude', {required: false}),
       executionTimeout: parseInt(core.getInput('execution-timeout', {required: false}) || '5', 10),
