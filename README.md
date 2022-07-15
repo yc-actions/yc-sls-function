@@ -24,7 +24,7 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
         folder-id: 'b1g*********'
         function-name: 'test-function'
         runtime: 'nodejs16'
-        memory: '256Mb'
+        revision-memory: '256Mb'
         entrypoint: 'src/main.handler'
         environment: | 
           DEBUG=True
