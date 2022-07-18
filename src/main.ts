@@ -16,7 +16,6 @@ import {
   ListFunctionsRequest,
 } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function_service';
 import {Package} from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function';
-import {Operation} from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/operation/operation';
 import {StorageServiceImpl} from './storage';
 import {StorageObject} from './storage/storage-object';
 import {IIAmCredentials} from '@yandex-cloud/nodejs-sdk/dist/types';
@@ -155,17 +154,6 @@ async function run(): Promise<void> {
   }
 }
 
-function handleOperationError(operation: Operation): void {
-  if (operation.error) {
-    const details = operation.error?.details;
-    if (details) {
-      throw Error(`${operation.error.code}: ${operation.error.message} (${details.join(', ')})`);
-    }
-
-    throw Error(`${operation.error.code}: ${operation.error.message}`);
-  }
-}
-
 async function createFunctionVersion(
   session: Session,
   functionId: string,
@@ -212,7 +200,6 @@ async function createFunctionVersion(
     const operation = await functionService.createVersion(request);
     await waitForOperation(operation, session);
 
-    handleOperationError(operation);
     core.info('Operation complete');
     let metadata;
     if (operation.metadata) {
@@ -222,6 +209,8 @@ async function createFunctionVersion(
       throw new Error('Failed to create function version');
     }
     core.setOutput('version-id', metadata.functionVersionId);
+  } catch (error) {
+    core.setFailed((error as {description: string}).description);
   } finally {
     core.endGroup();
   }
