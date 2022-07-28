@@ -40,6 +40,7 @@ export class StorageServiceImpl implements StorageService {
       headers: {
         'X-YaCloud-SubjectToken': token,
       },
+      maxBodyLength: 128 * 1024 * 1024,
     });
   }
 

@@ -194,6 +194,9 @@ async function createFunctionVersion(
         objectName: bucketObjectName,
       });
     } else {
+      if (fileContents.length > parseMemory('3.5Mb')) {
+        throw Error(`Zip file is too big: ${fileContents.length} bytes. Provide bucket name.`);
+      }
       request.content = fileContents;
     }
     // Create new version
@@ -210,7 +213,11 @@ async function createFunctionVersion(
     }
     core.setOutput('version-id', metadata.functionVersionId);
   } catch (error) {
-    core.setFailed((error as {description: string}).description);
+    if ('description' in (error as object)) {
+      core.setFailed((error as {description: string}).description);
+    } else {
+      core.setFailed(error as Error);
+    }
   } finally {
     core.endGroup();
   }
