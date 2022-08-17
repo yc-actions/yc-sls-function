@@ -194,7 +194,8 @@ async function createFunctionVersion(
         objectName: bucketObjectName,
       });
     } else {
-      if (fileContents.length > parseMemory('3.5Mb')) {
+      // 3.5 mb
+      if (fileContents.length > 3670016) {
         throw Error(`Zip file is too big: ${fileContents.length} bytes. Provide bucket name.`);
       }
       request.content = fileContents;
