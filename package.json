@@ -33,7 +33,7 @@
     "minimatch": "^5.1.0",
     "minimist": ">=1.2.6",
     "long": "4.0.0",
-    "axios": "^0.27.2"
+    "axios": "^1.1.2"
   },
   "devDependencies": {
     "@types/archiver": "^5.3.1",
