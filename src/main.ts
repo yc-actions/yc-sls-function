@@ -236,21 +236,21 @@ async function zipSources(inputs: ActionInputs): Promise<Buffer> {
     const archive = archiver('zip', {zlib: {level: 9}});
     core.info('Archive initialize');
 
+    archive.on('entry', e => {
+      core.info(`add: ${e.name}`);
+    });
+
     archive.pipe(outputStreamBuffer);
     const patterns = parseIgnoreGlobPatterns(inputs.excludePattern);
     for (const line of inputs.include) {
       if (fs.lstatSync(line).isDirectory()) {
         archive.directory(line, line, data => {
           const res = !patterns.map(p => minimatch(data.name, p)).some(x => x);
-          if (res) {
-            core.info(`Path '${data}' added to archive from ${line}`);
-          }
           return res ? data : false;
         });
       } else {
         archive.file(line, {name: line});
       }
-      core.info(`Path '${line}' added to archive`);
     }
 
     await archive.finalize();
