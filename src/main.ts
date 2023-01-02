@@ -242,6 +242,9 @@ async function zipSources(inputs: ActionInputs): Promise<Buffer> {
       if (fs.lstatSync(line).isDirectory()) {
         archive.directory(line, line, data => {
           const res = !patterns.map(p => minimatch(data.name, p)).some(x => x);
+          if (res) {
+            core.info(`Path '${data}' added to archive from ${line}`);
+          }
           return res ? data : false;
         });
       } else {
