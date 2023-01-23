@@ -33,7 +33,7 @@
     "minimatch": "5.1.4",
     "minimist": ">=1.2.7",
     "long": "4.0.0",
-    "axios": "^1.2.2",
+    "axios": "^1.2.3",
     "@grpc/grpc-js": "^1.8.4"
   },
   "devDependencies": {
