@@ -1,4 +1,4 @@
-import {test, expect} from '@jest/globals';
+import {expect, test} from '@jest/globals';
 import {GB, MB, parseMemory} from '../src/memory';
 
 const mbs = ['mb', 'MB', ' mb'];

@@ -32,6 +32,10 @@ inputs:
     description: 'Exclude patterns for source directory. Multiline'
     default: ''
     required: false
+  source-root:
+    description: 'Path that will considered as function source root.'
+    required: false
+    default: '.'
   memory:
     description: 'Memory in Mb. Pattern: ^\d+Mb$'
     default: '128Mb'

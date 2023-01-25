@@ -3,6 +3,7 @@ import * as github from '@actions/github';
 import archiver from 'archiver';
 import * as streamBuffers from 'stream-buffers';
 import minimatch from 'minimatch';
+import {glob} from 'glob';
 
 import {decodeMessage, serviceClients, Session, waitForOperation} from '@yandex-cloud/nodejs-sdk';
 import {KB, parseMemory} from './memory';
@@ -19,6 +20,7 @@ import {Package} from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serv
 import {StorageServiceImpl} from './storage';
 import {StorageObject} from './storage/storage-object';
 import {IIAmCredentials} from '@yandex-cloud/nodejs-sdk/dist/types';
+import path from 'node:path';
 
 type ActionInputs = {
   folderId: string;
@@ -28,6 +30,7 @@ type ActionInputs = {
   memory: number;
   include: string[];
   excludePattern: string[];
+  sourceRoot: string;
   executionTimeout: number;
   environment: string[];
   serviceAccount: string;
@@ -121,6 +124,7 @@ async function run(): Promise<void> {
       memory: parseMemory(core.getInput('memory', {required: false}) || '128Mb'),
       include: core.getMultilineInput('include', {required: false}),
       excludePattern: core.getMultilineInput('exclude', {required: false}),
+      sourceRoot: core.getInput('source-root', {required: false}) || '.',
       executionTimeout: parseInt(core.getInput('execution-timeout', {required: false}) || '5', 10),
       environment: core.getMultilineInput('environment', {required: false}),
       serviceAccount: core.getInput('service-account', {required: false}),
@@ -131,7 +135,8 @@ async function run(): Promise<void> {
 
     core.info('Function inputs set');
 
-    const fileContents = await zipSources(inputs);
+    const archive = archiver('zip', {zlib: {level: 9}});
+    const fileContents = await zipSources(inputs, archive);
 
     core.info(`Buffer size: ${Buffer.byteLength(fileContents)}b`);
 
@@ -224,7 +229,13 @@ async function createFunctionVersion(
   }
 }
 
-async function zipSources(inputs: ActionInputs): Promise<Buffer> {
+export interface ZipInputs {
+  include: string[];
+  excludePattern: string[];
+  sourceRoot: string;
+}
+
+export async function zipSources(inputs: ZipInputs, archive: archiver.Archiver): Promise<Buffer> {
   core.startGroup('ZipDirectory');
 
   try {
@@ -233,23 +244,28 @@ async function zipSources(inputs: ActionInputs): Promise<Buffer> {
       incrementAmount: 1000 * KB, // grow by 1000 kilobytes each time buffer overflows.
     });
 
-    const archive = archiver('zip', {zlib: {level: 9}});
     core.info('Archive initialize');
 
     archive.on('entry', e => {
       core.info(`add: ${e.name}`);
     });
 
+    const workspace = process.env['GITHUB_WORKSPACE'] ?? '';
     archive.pipe(outputStreamBuffer);
     const patterns = parseIgnoreGlobPatterns(inputs.excludePattern);
-    for (const line of inputs.include) {
-      if (fs.lstatSync(line).isDirectory()) {
-        archive.directory(line, line, data => {
-          const res = !patterns.map(p => minimatch(data.name, p)).some(x => x);
-          return res ? data : false;
-        });
-      } else {
-        archive.file(line, {name: line});
+    const root = path.join(workspace, inputs.sourceRoot);
+    for (const include of inputs.include) {
+      const pathFromSourceRoot = path.join(root, include);
+      const matches = glob.sync(pathFromSourceRoot, {absolute: false});
+      for (const match of matches) {
+        if (fs.lstatSync(match).isDirectory()) {
+          archive.directory(pathFromSourceRoot, include, data => {
+            const res = !patterns.map(p => minimatch(data.name, p)).some(x => x);
+            return res ? data : false;
+          });
+        } else {
+          archive.file(match, {name: match.replace(root, './')});
+        }
       }
     }
 
