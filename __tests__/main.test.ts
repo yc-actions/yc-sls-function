@@ -118,7 +118,7 @@ describe('zipSources', function () {
 });
 
 describe('lockbox', () => {
-  test("it should return right lockbox secrets", async () => {
+  test("it should return right lockbox secrets",() => {
     const input = ['VAR_1=123/123/VAR_1', 'VAR_2=123/123/VAR_2'];
     const result = parseLockboxVariables(input);
     const expected: Secret[] = [{
@@ -136,8 +136,9 @@ describe('lockbox', () => {
     expect(result).toEqual(expected)
   });
 
-  test("it should throw error when bad input provided", async () => {
-    const input = ['123412343'];
+  test.each(
+      ['123412343', '123=123', '123=123/123', '123=123/123/']
+  )("it should throw error when bad input provided", (input) => {
     expect(() => parseLockboxVariables(input)).toThrow();
   });
 });
