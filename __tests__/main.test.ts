@@ -119,16 +119,16 @@ describe('zipSources', function () {
 
 describe('lockbox', () => {
   test("it should return right lockbox secrets",() => {
-    const input = ['VAR_1=id/verId/VAR_1', 'VAR_2=id/verId/VAR_2'];
+    const input = ['ENV_VAR_1=id/verId/VAR_1', 'ENV_VAR_2=id/verId/VAR_2'];
     const result = parseLockboxVariables(input);
     const expected: Secret[] = [{
-        environmentVariable: 'VAR_1',
+        environmentVariable: 'ENV_VAR_1',
         id: 'id',
         versionId: 'verId',
         key: 'VAR_1'
       },
       {
-        environmentVariable: 'VAR_2',
+        environmentVariable: 'ENV_VAR_2',
         id: 'id',
         versionId: 'verId',
         key: 'VAR_2'
