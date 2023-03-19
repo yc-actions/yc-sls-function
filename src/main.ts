@@ -317,22 +317,22 @@ function parseEnvironmentVariables(env: string[]): {[s: string]: string} {
   return environment;
 }
 
-type Secret = {
-  id?: string | undefined;
-  key?: string | undefined;
-  versionId?: string | undefined;
-  environmentVariable?: string | undefined;
+export type Secret = {
+  environmentVariable: string;
+  id: string;
+  versionId: string;
+  key: string;
 };
 
-// environmentVariable: id/key/versionId
-function parseLockboxVariables(secrets: string[]): Secret[] {
+// environmentVariable=id/versionId/key
+export function parseLockboxVariables(secrets: string[]): Secret[] {
   core.info(`Secrets string: "${secrets}"`);
   const secretsArr: Secret[] = [];
 
   for (const line of secrets) {
-    const [environmentVariable, values] = line.split(': ');
-    const [id, key, versionId] = values.split('/');
-    const secret = {environmentVariable, id, key, versionId} as Secret;
+    const [environmentVariable, values] = line.split('=');
+    const [id, versionId, key] = values.split('/');
+    const secret = {environmentVariable, id, versionId, key} as Secret;
     secretsArr.push(secret);
   }
 

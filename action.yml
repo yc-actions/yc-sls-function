@@ -53,7 +53,7 @@ inputs:
     default: ''
     required: false
   secrets:
-    description: 'Lockbox secrets. Pattern: "<environmentVariable>: <secretId>/<secretKey>/<versionId>". Multiline'
+    description: 'Lockbox secrets. Pattern: "<environmentVariable>=<secretId>/<versionId>/<secretKey>". Multiline'
     default: ''
     required: false
   tags:

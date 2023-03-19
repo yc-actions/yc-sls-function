@@ -2,7 +2,7 @@ import * as cp from 'child_process';
 import * as path from 'path';
 import * as process from 'process';
 import {expect, test} from '@jest/globals';
-import {ZipInputs, zipSources} from '../src/main';
+import {ZipInputs, zipSources, parseLockboxVariables, Secret} from '../src/main';
 import archiver from 'archiver';
 
 // This test will run only in fully configured env and creates real VM
@@ -114,5 +114,30 @@ describe('zipSources', function () {
     expect(allStartWithSrc).toBeTruthy();
     expect(entries.length).toBe(1);
     expect(entries[0].name).toBe('./func.js');
+  });
+});
+
+describe('lockbox', () => {
+  test("it should return right lockbox secrets", async () => {
+    const input = ['VAR_1=123/123/VAR_1', 'VAR_2=123/123/VAR_2'];
+    const result = parseLockboxVariables(input);
+    const expected: Secret[] = [{
+        environmentVariable: 'VAR_1',
+        id: '123',
+        versionId: '123',
+        key: 'VAR_1'
+      },
+      {
+        environmentVariable: 'VAR_2',
+        id: '123',
+        versionId: '123',
+        key: 'VAR_2'
+      }];
+    expect(result).toEqual(expected)
+  });
+
+  test("it should throw error when bad input provided", async () => {
+    const input = ['123412343'];
+    expect(() => parseLockboxVariables(input)).toThrow();
   });
 });
