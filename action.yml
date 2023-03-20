@@ -52,6 +52,10 @@ inputs:
     description: 'Service account for function'
     default: ''
     required: false
+  secrets:
+    description: 'Lockbox secrets. Pattern: "<environmentVariable>=<secretId>/<versionId>/<secretKey>". Multiline'
+    default: ''
+    required: false
   tags:
     description: 'Version tags. Multiline'
     default: ''

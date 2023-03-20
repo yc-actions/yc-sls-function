@@ -36,6 +36,7 @@ type ActionInputs = {
   serviceAccount: string;
   bucket: string;
   description: string;
+  secrets: string[];
   tags: string[];
 };
 
@@ -130,6 +131,7 @@ async function run(): Promise<void> {
       serviceAccount: core.getInput('service-account', {required: false}),
       bucket: core.getInput('bucket', {required: false}),
       description: core.getInput('description', {required: false}),
+      secrets: core.getMultilineInput('secrets', {required: false}),
       tags: core.getMultilineInput('tags', {required: false}),
     };
 
@@ -185,6 +187,7 @@ async function createFunctionVersion(
       description: inputs.description,
       environment: parseEnvironmentVariables(inputs.environment),
       executionTimeout: {seconds: inputs.executionTimeout},
+      secrets: parseLockboxVariables(inputs.secrets),
       tag: inputs.tags,
     });
 
@@ -312,6 +315,29 @@ function parseEnvironmentVariables(env: string[]): {[s: string]: string} {
 
   core.info(`EnvObject: "${JSON.stringify(environment)}"`);
   return environment;
+}
+
+export type Secret = {
+  environmentVariable: string;
+  id: string;
+  versionId: string;
+  key: string;
+};
+
+// environmentVariable=id/versionId/key
+export function parseLockboxVariables(secrets: string[]): Secret[] {
+  core.info(`Secrets string: "${secrets}"`);
+  const secretsArr: Secret[] = [];
+
+  for (const line of secrets) {
+    const [environmentVariable, values] = line.split('=');
+    const [id, versionId, key] = values.split('/');
+    const secret = {environmentVariable, id, versionId, key} as Secret;
+    secretsArr.push(secret);
+  }
+
+  core.info(`SecretsObject: "${JSON.stringify(secretsArr)}"`);
+  return secretsArr;
 }
 
 run();
