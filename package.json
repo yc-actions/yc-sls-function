@@ -35,7 +35,7 @@
     "minimatch": "5.1.4",
     "minimist": ">=1.2.8",
     "stream-buffers": "^3.0.2",
-    "glob": "^8.1.0"
+    "glob": "^10.0.0"
   },
   "devDependencies": {
     "@types/glob": "^8.0.1",
