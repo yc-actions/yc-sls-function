@@ -77,7 +77,7 @@ describe('zipSources', function () {
 
     const allStartWithSrc = entries.every(e => e.name.startsWith('./src'));
     expect(allStartWithSrc).toBeTruthy();
-    expect(entries.length).toBe(2);
+    expect(entries.length).toBe(8);
   });
 
   test('it should drop folder prefix if sourceRoot provided', async () => {
@@ -92,10 +92,10 @@ describe('zipSources', function () {
     archive.on('entry', e => entries.push(e));
     await zipSources(inputs, archive);
 
-    const allStartWithSrc = entries.every(e => !e.name.startsWith('./src'));
+    const noneStartWithSrc = entries.every(e => !e.name.startsWith('./src'));
 
-    expect(allStartWithSrc).toBeTruthy();
-    expect(entries.length).toEqual(3);
+    expect(noneStartWithSrc).toBeTruthy();
+    expect(entries.length).toEqual(9);
   });
 
   test('it should respect source root and include only needed files', async () => {
@@ -110,10 +110,28 @@ describe('zipSources', function () {
     archive.on('entry', e => entries.push(e));
     await zipSources(inputs, archive);
 
-    const allStartWithSrc = entries.every(e => !e.name.startsWith('./src'));
-    expect(allStartWithSrc).toBeTruthy();
+    const noneStartWithSrc = entries.every(e => !e.name.startsWith('./src'));
+    expect(noneStartWithSrc).toBeTruthy();
     expect(entries.length).toBe(1);
     expect(entries[0].name).toBe('./func.js');
+  });
+
+  test('it should add folders', async () => {
+    const archive = archiver('zip', {zlib: {level: 9}});
+    const inputs: ZipInputs = {
+      include: ['./src/foo', './src/bar/*'],
+      excludePattern: [],
+      sourceRoot: '.',
+    };
+
+    const entries: archiver.EntryData[] = [];
+    archive.on('entry', e => entries.push(e));
+    await zipSources(inputs, archive);
+
+    const allStartWithSrc = entries.every(e => e.name.startsWith('./src'));
+    expect(allStartWithSrc).toBeTruthy();
+    expect(entries.length).toBe(4);
+    expect(entries.map(x => x.name).sort()).toMatchSnapshot();
   });
 });
 
