@@ -2,12 +2,12 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import archiver from 'archiver';
 import * as streamBuffers from 'stream-buffers';
-import minimatch from 'minimatch';
+import {minimatch} from 'minimatch';
 import {glob} from 'glob';
 
 import {decodeMessage, serviceClients, Session, waitForOperation} from '@yandex-cloud/nodejs-sdk';
 import {KB, parseMemory} from './memory';
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import {fromServiceAccountJsonFile} from './service-account-json';
 import {
   CreateFunctionMetadata,
