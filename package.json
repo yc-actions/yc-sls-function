@@ -44,7 +44,7 @@
     "@types/archiver": "^5.3.2",
     "@types/jest": "^29.5.1",
     "@types/mustache": "^4.2.2",
-    "@types/node": "^20.1.0",
+    "@types/node": "^20.1.5",
     "@types/stream-buffers": "^3.0.4",
     "@typescript-eslint/eslint-plugin": "^5.59.6",
     "@typescript-eslint/parser": "^5.59.5",
