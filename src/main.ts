@@ -38,7 +38,6 @@ type ActionInputs = {
   description: string;
   secrets: string[];
   networkId: string;
-  subnetId: string[];
   tags: string[];
 };
 
@@ -134,8 +133,7 @@ async function run(): Promise<void> {
       bucket: core.getInput('bucket', {required: false}),
       description: core.getInput('description', {required: false}),
       secrets: core.getMultilineInput('secrets', {required: false}),
-      networkId: core.getInput('network', {required: false}),
-      subnetId: core.getMultilineInput('subnets', {required: false}),
+      networkId: core.getInput('network-id', {required: false}),
       tags: core.getMultilineInput('tags', {required: false}),
     };
 
@@ -193,15 +191,10 @@ async function createFunctionVersion(
       executionTimeout: {seconds: inputs.executionTimeout},
       secrets: parseLockboxVariables(inputs.secrets),
       tag: inputs.tags,
-    });
-
-    if (inputs.networkId && inputs.subnetId.length > 0) {
-      request.connectivity = {
-        $type: 'yandex.cloud.serverless.functions.v1.Connectivity',
+      connectivity: {
         networkId: inputs.networkId,
-        subnetId: inputs.subnetId,
-      };
-    }
+      },
+    });
 
     const functionService = session.client(serviceClients.FunctionServiceClient);
 
