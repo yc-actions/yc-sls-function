@@ -56,12 +56,8 @@ inputs:
     description: 'Lockbox secrets. Pattern: "<environmentVariable>=<secretId>/<versionId>/<secretKey>". Multiline'
     default: ''
     required: false
-  network:
+  network-id:
     description: 'Function version connectivity. If specified the version will be attached to specified network/subnet(s).'
-    default: ''
-    required: false
-  subnets:
-    description: 'List of subnets for set network'
     default: ''
     required: false
   tags:
