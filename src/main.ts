@@ -338,6 +338,9 @@ export function parseLockboxVariables(secrets: string[]): Secret[] {
     const [environmentVariable, values] = line.split('=');
     const [id, versionId, key] = values.split('/');
     const secret = {environmentVariable, id, versionId, key} as Secret;
+    if (!environmentVariable || !id || !key || !versionId) {
+      throw new Error(`Broken reference to Lockbox Secret: ${line}`);
+    }
     secretsArr.push(secret);
   }
 

@@ -10,9 +10,12 @@ module.exports = {
     "json"
   ],
   transform: {
-    "^.+\\.(t|j)sx?$": ["@swc/jest"],
+    "^.+\\.tsx?$": ["ts-jest", {
+      tsconfig: "./__tests__/tsconfig.json"
+    }]
   },
   transformIgnorePatterns: [],
   testEnvironment: "node",
-  testMatch: ["**/__tests__/**/*.test.[jt]s?(x)"]
+  testMatch: ["**/__tests__/**/*.test.[jt]s?(x)"],
+  // preset: "ts-jest"
 };

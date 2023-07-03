@@ -1,8 +1,8 @@
-import * as cp from 'child_process';
-import * as path from 'path';
-import * as process from 'process';
+import * as cp from 'node:child_process';
+import * as path from 'node:path';
+import * as process from 'node:process';
 import {expect, test} from '@jest/globals';
-import {ZipInputs, zipSources, parseLockboxVariables, Secret} from '../src/main';
+import {parseLockboxVariables, Secret, ZipInputs, zipSources} from '../src/main';
 import archiver from 'archiver';
 
 // This test will run only in fully configured env and creates real VM
@@ -159,7 +159,7 @@ describe('lockbox', () => {
   test.each(['123412343', '123=id', '123=id/verId', '123=id/verId/'])(
     'it should throw error when bad input provided',
     input => {
-      expect(() => parseLockboxVariables(input)).toThrow();
+      expect(() => parseLockboxVariables([input])).toThrow();
     },
   );
 });
