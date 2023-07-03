@@ -37,6 +37,7 @@ type ActionInputs = {
   bucket: string;
   description: string;
   secrets: string[];
+  networkId: string;
   tags: string[];
 };
 
@@ -132,6 +133,7 @@ async function run(): Promise<void> {
       bucket: core.getInput('bucket', {required: false}),
       description: core.getInput('description', {required: false}),
       secrets: core.getMultilineInput('secrets', {required: false}),
+      networkId: core.getInput('network-id', {required: false}),
       tags: core.getMultilineInput('tags', {required: false}),
     };
 
@@ -189,6 +191,9 @@ async function createFunctionVersion(
       executionTimeout: {seconds: inputs.executionTimeout},
       secrets: parseLockboxVariables(inputs.secrets),
       tag: inputs.tags,
+      connectivity: {
+        networkId: inputs.networkId,
+      },
     });
 
     const functionService = session.client(serviceClients.FunctionServiceClient);
