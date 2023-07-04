@@ -133,6 +133,24 @@ describe('zipSources', function () {
     expect(entries.length).toBe(4);
     expect(entries.map(x => x.name).sort()).toMatchSnapshot();
   });
+
+  test('it should ignore empty lines in include', async () => {
+    const archive = archiver('zip', {zlib: {level: 9}});
+    const inputs: ZipInputs = {
+      include: ['func.js', 'foo/1.txt', ''],
+      excludePattern: [],
+      sourceRoot: './src/',
+    };
+
+    const entries: archiver.EntryData[] = [];
+    archive.on('entry', e => entries.push(e));
+    await zipSources(inputs, archive);
+
+    const noneStartWithSrc = entries.every(e => !e.name.startsWith('./src'));
+    expect(noneStartWithSrc).toBeTruthy();
+    expect(entries.length).toEqual(2);
+    expect(entries.map(x => x.name).sort()).toMatchSnapshot();
+  });
 });
 
 describe('lockbox', () => {

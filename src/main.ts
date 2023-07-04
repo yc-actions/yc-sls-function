@@ -262,7 +262,8 @@ export async function zipSources(inputs: ZipInputs, archive: archiver.Archiver):
     archive.pipe(outputStreamBuffer);
     const patterns = parseIgnoreGlobPatterns(inputs.excludePattern);
     const root = path.join(workspace, inputs.sourceRoot);
-    for (const include of inputs.include) {
+    const includes = inputs.include.filter(x => x.length > 0);
+    for (const include of includes) {
       const pathFromSourceRoot = path.join(root, include);
       const matches = glob.sync(pathFromSourceRoot, {absolute: false});
       for (const match of matches) {

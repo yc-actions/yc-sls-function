@@ -8,3 +8,10 @@ exports[`zipSources it should add folders 1`] = `
   "./src/foo/2.txt",
 ]
 `;
+
+exports[`zipSources it should ignore empty lines in include 1`] = `
+[
+  "./foo/1.txt",
+  "./func.js",
+]
+`;
