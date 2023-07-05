@@ -1,6 +1,7 @@
-import * as cp from 'node:child_process';
-import * as path from 'node:path';
-import * as process from 'node:process';
+import * as cp from 'child_process';
+import * as path from 'path';
+import * as fs from 'node:fs';
+import * as process from 'process';
 import {expect, test} from '@jest/globals';
 import {parseLockboxVariables, Secret, ZipInputs, zipSources} from '../src/main';
 import archiver from 'archiver';
@@ -28,7 +29,7 @@ test.skip('test runs', () => {
   console.log(res?.toString());
 });
 
-describe('zipSources', function () {
+describe('zipSources', function() {
   test('it should add files from include', async () => {
     const archive = archiver('zip', {zlib: {level: 9}});
     const inputs: ZipInputs = {
@@ -41,7 +42,7 @@ describe('zipSources', function () {
     archive.on('entry', e => entries.push(e));
     await zipSources(inputs, archive);
 
-    const allStartWithSrc = entries.every(e => e.name.startsWith('./src'));
+    const allStartWithSrc = entries.every(e => e.name.includes('src'));
     expect(allStartWithSrc).toBeTruthy();
   });
 
@@ -57,10 +58,10 @@ describe('zipSources', function () {
     archive.on('entry', e => entries.push(e));
     await zipSources(inputs, archive);
 
-    const allStartWithSrc = entries.every(e => e.name.startsWith('./src'));
+    const allStartWithSrc = entries.every(e => e.name.includes('src'));
     expect(allStartWithSrc).toBeTruthy();
     expect(entries.length).toBe(1);
-    expect(entries[0].name).toBe('./src/func.js');
+    expect(entries[0].name).toBe('src/func.js');
   });
 
   test('it should drop files from if they match exclude patterns', async () => {
@@ -75,7 +76,7 @@ describe('zipSources', function () {
     archive.on('entry', e => entries.push(e));
     await zipSources(inputs, archive);
 
-    const allStartWithSrc = entries.every(e => e.name.startsWith('./src'));
+    const allStartWithSrc = entries.every(e => e.name.includes('src'));
     expect(allStartWithSrc).toBeTruthy();
     expect(entries.length).toBe(8);
   });
@@ -92,28 +93,33 @@ describe('zipSources', function () {
     archive.on('entry', e => entries.push(e));
     await zipSources(inputs, archive);
 
-    const noneStartWithSrc = entries.every(e => !e.name.startsWith('./src'));
+    const noneStartWithSrc = entries.every(e => !e.name.includes('src'));
 
     expect(noneStartWithSrc).toBeTruthy();
     expect(entries.length).toEqual(9);
   });
 
-  test('it should respect source root and include only needed files', async () => {
+  test.each([
+      ['./src'],
+      ['./src/'],
+      ['src'],
+    ],
+  )('it should respect source root and include only needed files with root %s', async (sourceRoot) => {
     const archive = archiver('zip', {zlib: {level: 9}});
     const inputs: ZipInputs = {
-      include: ['./*.js'],
+      include: ['./*.js', 'foo/1.txt'],
       excludePattern: [],
-      sourceRoot: './src',
+      sourceRoot,
     };
 
     const entries: archiver.EntryData[] = [];
     archive.on('entry', e => entries.push(e));
     await zipSources(inputs, archive);
 
-    const noneStartWithSrc = entries.every(e => !e.name.startsWith('./src'));
+    const noneStartWithSrc = entries.every(e => !e.name.includes('src'));
     expect(noneStartWithSrc).toBeTruthy();
-    expect(entries.length).toBe(1);
-    expect(entries[0].name).toBe('./func.js');
+    expect(entries.length).toBe(2);
+    expect(entries[0].name).toBe('func.js');
   });
 
   test('it should add folders', async () => {
@@ -128,7 +134,7 @@ describe('zipSources', function () {
     archive.on('entry', e => entries.push(e));
     await zipSources(inputs, archive);
 
-    const allStartWithSrc = entries.every(e => e.name.startsWith('./src'));
+    const allStartWithSrc = entries.every(e => e.name.includes('src'));
     expect(allStartWithSrc).toBeTruthy();
     expect(entries.length).toBe(4);
     expect(entries.map(x => x.name).sort()).toMatchSnapshot();
@@ -146,7 +152,7 @@ describe('zipSources', function () {
     archive.on('entry', e => entries.push(e));
     await zipSources(inputs, archive);
 
-    const noneStartWithSrc = entries.every(e => !e.name.startsWith('./src'));
+    const noneStartWithSrc = entries.every(e => !e.name.includes('src'));
     expect(noneStartWithSrc).toBeTruthy();
     expect(entries.length).toEqual(2);
     expect(entries.map(x => x.name).sort()).toMatchSnapshot();
@@ -175,7 +181,7 @@ describe('lockbox', () => {
   });
 
   test.each(['123412343', '123=id', '123=id/verId', '123=id/verId/'])(
-    'it should throw error when bad input provided',
+    'it should throw error when bad input provided %s',
     input => {
       expect(() => parseLockboxVariables([input])).toThrow();
     },

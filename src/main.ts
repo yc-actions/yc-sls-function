@@ -273,7 +273,7 @@ export async function zipSources(inputs: ZipInputs, archive: archiver.Archiver):
             return res ? data : false;
           });
         } else {
-          archive.file(match, {name: match.replace(root, './')});
+          archive.file(match, {name: path.relative(root, match)});
         }
       }
     }

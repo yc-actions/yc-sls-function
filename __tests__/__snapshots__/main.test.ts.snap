@@ -2,16 +2,16 @@
 
 exports[`zipSources it should add folders 1`] = `
 [
-  "./src/bar/1.txt",
-  "./src/bar/2.txt",
   "./src/foo/1.txt",
   "./src/foo/2.txt",
+  "src/bar/1.txt",
+  "src/bar/2.txt",
 ]
 `;
 
 exports[`zipSources it should ignore empty lines in include 1`] = `
 [
-  "./foo/1.txt",
-  "./func.js",
+  "foo/1.txt",
+  "func.js",
 ]
 `;
