@@ -268,11 +268,13 @@ export async function zipSources(inputs: ZipInputs, archive: archiver.Archiver):
       const matches = glob.sync(pathFromSourceRoot, {absolute: false});
       for (const match of matches) {
         if (fs.lstatSync(match).isDirectory()) {
+          core.debug(`match:  dir ${match}`);
           archive.directory(pathFromSourceRoot, include, data => {
             const res = !patterns.map(p => minimatch(data.name, p)).some(x => x);
             return res ? data : false;
           });
         } else {
+          core.debug(`match: file ${match}`);
           archive.file(match, {name: path.relative(root, match)});
         }
       }

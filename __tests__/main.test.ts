@@ -29,7 +29,7 @@ test.skip('test runs', () => {
   console.log(res?.toString());
 });
 
-describe('zipSources', function() {
+describe('zipSources', function () {
   test('it should add files from include', async () => {
     const archive = archiver('zip', {zlib: {level: 9}});
     const inputs: ZipInputs = {
@@ -99,28 +99,26 @@ describe('zipSources', function() {
     expect(entries.length).toEqual(9);
   });
 
-  test.each([
-      ['./src'],
-      ['./src/'],
-      ['src'],
-    ],
-  )('it should respect source root and include only needed files with root %s', async (sourceRoot) => {
-    const archive = archiver('zip', {zlib: {level: 9}});
-    const inputs: ZipInputs = {
-      include: ['./*.js', 'foo/1.txt'],
-      excludePattern: [],
-      sourceRoot,
-    };
+  test.each([['./src'], ['./src/'], ['src']])(
+    'it should respect source root and include only needed files with root %s',
+    async sourceRoot => {
+      const archive = archiver('zip', {zlib: {level: 9}});
+      const inputs: ZipInputs = {
+        include: ['./*.js', 'foo/1.txt'],
+        excludePattern: [],
+        sourceRoot,
+      };
 
-    const entries: archiver.EntryData[] = [];
-    archive.on('entry', e => entries.push(e));
-    await zipSources(inputs, archive);
+      const entries: archiver.EntryData[] = [];
+      archive.on('entry', e => entries.push(e));
+      await zipSources(inputs, archive);
 
-    const noneStartWithSrc = entries.every(e => !e.name.includes('src'));
-    expect(noneStartWithSrc).toBeTruthy();
-    expect(entries.length).toBe(2);
-    expect(entries[0].name).toBe('func.js');
-  });
+      const noneStartWithSrc = entries.every(e => !e.name.includes('src'));
+      expect(noneStartWithSrc).toBeTruthy();
+      expect(entries.length).toBe(2);
+      expect(entries[0].name).toBe('func.js');
+    },
+  );
 
   test('it should add folders', async () => {
     const archive = archiver('zip', {zlib: {level: 9}});
