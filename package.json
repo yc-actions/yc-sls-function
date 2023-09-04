@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@types/archiver": "^5.3.2",
-    "@types/jest": "^29.5.3",
+    "@types/jest": "^29.5.4",
     "@types/mustache": "^4.2.2",
     "@types/node": "^20.5.9",
     "@types/stream-buffers": "^3.0.4",
@@ -52,7 +52,7 @@
     "eslint": "^8.48.0",
     "eslint-plugin-github": "^4.10.0",
     "eslint-plugin-jest": "^27.2.3",
-    "jest": "^29.6.3",
+    "jest": "^29.6.4",
     "js-yaml": "^4.1.0",
     "prettier": "3.0.1",
     "ts-jest": "^29.1.1",
