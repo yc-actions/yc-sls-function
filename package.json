@@ -30,7 +30,7 @@
     "@actions/github": "^5.1.1",
     "@grpc/grpc-js": "^1.9.2",
     "@yandex-cloud/nodejs-sdk": "2.4.9",
-    "archiver": "^6.0.0",
+    "archiver": "^6.0.1",
     "axios": "^1.5.0",
     "glob": "^10.3.4",
     "long": "4.0.0",
