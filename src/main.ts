@@ -151,7 +151,7 @@ async function run(): Promise<void> {
       tags: core.getMultilineInput('tags', {required: false}),
       logsDisabled: core.getBooleanInput('logs-disabled', {required: false}) || false,
       logsGroupId: core.getInput('logs-group-id', {required: false}),
-      logLevel: (core.getInput('log-level', {required: false, trimWhitespace: true}) as LogLevelKeys) || 'unspecified',
+      logLevel: core.getInput('log-level', {required: false, trimWhitespace: true}) as LogLevelKeys,
     };
 
     core.info('Function inputs set');
