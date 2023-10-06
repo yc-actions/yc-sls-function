@@ -22,6 +22,17 @@ import {StorageObject} from './storage/storage-object';
 import {IIAmCredentials} from '@yandex-cloud/nodejs-sdk/dist/types';
 import path from 'node:path';
 
+const LogLevel = {
+  unspecified: 0,
+  trace: 1,
+  debug: 2,
+  info: 3,
+  warn: 4,
+  error: 5,
+  fatal: 6,
+};
+type LogLevelKeys = keyof typeof LogLevel;
+
 type ActionInputs = {
   folderId: string;
   functionName: string;
@@ -39,6 +50,10 @@ type ActionInputs = {
   secrets: string[];
   networkId: string;
   tags: string[];
+  logsDisabled: boolean;
+  logsFolderId: string;
+  logsGroupId: string;
+  logLevel: LogLevelKeys;
 };
 
 async function uploadToS3(
@@ -135,6 +150,10 @@ async function run(): Promise<void> {
       secrets: core.getMultilineInput('secrets', {required: false}),
       networkId: core.getInput('network-id', {required: false}),
       tags: core.getMultilineInput('tags', {required: false}),
+      logsDisabled: core.getBooleanInput('logs-disabled', {required: false}) || false,
+      logsFolderId: core.getInput('logs-folder-id', {required: false}),
+      logsGroupId: core.getInput('logs-group-id', {required: false}),
+      logLevel: (core.getInput('log-level', {required: false, trimWhitespace: true}) as LogLevelKeys) || 'unspecified',
     };
 
     core.info('Function inputs set');
@@ -193,6 +212,12 @@ async function createFunctionVersion(
       tag: inputs.tags,
       connectivity: {
         networkId: inputs.networkId,
+      },
+      logOptions: {
+        disabled: inputs.logsDisabled,
+        folderId: inputs.logsFolderId,
+        logGroupId: inputs.logsGroupId,
+        minLevel: LogLevel[inputs.logLevel.toLowerCase() as LogLevelKeys],
       },
     });
 
