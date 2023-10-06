@@ -51,7 +51,6 @@ type ActionInputs = {
   networkId: string;
   tags: string[];
   logsDisabled: boolean;
-  logsFolderId: string;
   logsGroupId: string;
   logLevel: LogLevelKeys;
 };
@@ -151,7 +150,6 @@ async function run(): Promise<void> {
       networkId: core.getInput('network-id', {required: false}),
       tags: core.getMultilineInput('tags', {required: false}),
       logsDisabled: core.getBooleanInput('logs-disabled', {required: false}) || false,
-      logsFolderId: core.getInput('logs-folder-id', {required: false}),
       logsGroupId: core.getInput('logs-group-id', {required: false}),
       logLevel: (core.getInput('log-level', {required: false, trimWhitespace: true}) as LogLevelKeys) || 'unspecified',
     };
@@ -215,7 +213,6 @@ async function createFunctionVersion(
       },
       logOptions: {
         disabled: inputs.logsDisabled,
-        folderId: inputs.logsFolderId,
         logGroupId: inputs.logsGroupId,
         minLevel: LogLevel[inputs.logLevel.toLowerCase() as LogLevelKeys],
       },

@@ -68,12 +68,8 @@ inputs:
     description: 'Disable functions logging. Default false'
     default: 'false'
     required: false
-  logs-folder-id:
-    description: 'Folder ID. If set, logs will write to auto-created default group. Takes precedence over the logs-group-id'
-    default: ''
-    required: false
   logs-group-id:
-    description: 'Log group ID'
+    description: 'Logs group ID. If NOT set, logs will write to auto-created default group.'
     default: ''
     required: false
   log-level:
