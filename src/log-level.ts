@@ -1,23 +1,17 @@
-const LOG_LEVEL_KEYS = ['unspecified', 'trace', 'debug', 'info', 'warn', 'error', 'fatal'] as const;
+import {cloudApi} from '@yandex-cloud/nodejs-sdk';
 
-export type LOG_LEVEL = (typeof LOG_LEVEL_KEYS)[number];
+export const {
+  logging: {
+    log_entry: {LogLevel_Level},
+  },
+} = cloudApi;
 
-const logLevelValues: Record<LOG_LEVEL, number> = {
-  unspecified: 0,
-  trace: 1,
-  debug: 2,
-  info: 3,
-  warn: 4,
-  error: 5,
-  fatal: 6,
-};
-
-export const parseLogLevel = (levelKey: LOG_LEVEL): number => {
-  if (levelKey === undefined) {
-    return 0;
+export const parseLogLevel = (levelKey: string): cloudApi.logging.log_entry.LogLevel_Level => {
+  if (levelKey === '') {
+    return LogLevel_Level.LEVEL_UNSPECIFIED;
   }
-  if (!LOG_LEVEL_KEYS.includes(levelKey)) {
+  if (!Object.keys(LogLevel_Level).includes(levelKey.toUpperCase())) {
     throw new Error('Log level has unknown value');
   }
-  return logLevelValues[levelKey];
+  return LogLevel_Level[levelKey.toUpperCase() as keyof typeof LogLevel_Level];
 };
