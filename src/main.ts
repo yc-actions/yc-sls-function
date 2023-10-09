@@ -21,7 +21,7 @@ import {StorageServiceImpl} from './storage';
 import {StorageObject} from './storage/storage-object';
 import {IIAmCredentials} from '@yandex-cloud/nodejs-sdk/dist/types';
 import path from 'node:path';
-import {LOG_LEVEL, parseLogLevel} from './log-level';
+import {parseLogLevel} from './log-level';
 
 type ActionInputs = {
   folderId: string;
@@ -141,7 +141,7 @@ async function run(): Promise<void> {
       tags: core.getMultilineInput('tags', {required: false}),
       logsDisabled: core.getBooleanInput('logs-disabled', {required: false}) || false,
       logsGroupId: core.getInput('logs-group-id', {required: false}),
-      logLevel: parseLogLevel(core.getInput('log-level', {required: false, trimWhitespace: true}) as LOG_LEVEL),
+      logLevel: parseLogLevel(core.getInput('log-level', {required: false, trimWhitespace: true})),
     };
 
     core.info('Function inputs set');
