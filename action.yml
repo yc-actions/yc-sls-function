@@ -74,7 +74,7 @@ inputs:
     required: false
   log-level:
     description: 'Minimum log level (trace, debug, info, warn, error, fatal)'
-    default: 'unspecified'
+    default: ''
     required: false
 
 
