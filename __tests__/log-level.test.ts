@@ -7,8 +7,10 @@ const levelsArray = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
 const LEVELS = cloudApi.logging.log_entry.LogLevel_Level;
 
 test('should return default value LEVEL_UNSPECIFIED when key is not set', () => {
-  expect(parseLogLevel(getInput('log_level', {required: false, trimWhitespace: true}))).toEqual(LEVELS.LEVEL_UNSPECIFIED)
-})
+  expect(parseLogLevel(getInput('log_level', {required: false, trimWhitespace: true}))).toEqual(
+    LEVELS.LEVEL_UNSPECIFIED,
+  );
+});
 
 test.each(levelsArray)('should return correct enum for LogLevel = %s', (level: string) => {
   process.env.INPUT_LOG_LEVEL = level;
