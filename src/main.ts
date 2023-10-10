@@ -21,6 +21,7 @@ import {StorageServiceImpl} from './storage';
 import {StorageObject} from './storage/storage-object';
 import {IIAmCredentials} from '@yandex-cloud/nodejs-sdk/dist/types';
 import path from 'node:path';
+import {parseLogLevel} from './log-level';
 
 type ActionInputs = {
   folderId: string;
@@ -39,6 +40,9 @@ type ActionInputs = {
   secrets: string[];
   networkId: string;
   tags: string[];
+  logsDisabled: boolean;
+  logsGroupId: string;
+  logLevel: number;
 };
 
 async function uploadToS3(
@@ -135,6 +139,9 @@ async function run(): Promise<void> {
       secrets: core.getMultilineInput('secrets', {required: false}),
       networkId: core.getInput('network-id', {required: false}),
       tags: core.getMultilineInput('tags', {required: false}),
+      logsDisabled: core.getBooleanInput('logs-disabled', {required: false}) || false,
+      logsGroupId: core.getInput('logs-group-id', {required: false}),
+      logLevel: parseLogLevel(core.getInput('log-level', {required: false, trimWhitespace: true})),
     };
 
     core.info('Function inputs set');
@@ -193,6 +200,11 @@ async function createFunctionVersion(
       tag: inputs.tags,
       connectivity: {
         networkId: inputs.networkId,
+      },
+      logOptions: {
+        disabled: inputs.logsDisabled,
+        logGroupId: inputs.logsGroupId,
+        minLevel: inputs.logLevel,
       },
     });
 

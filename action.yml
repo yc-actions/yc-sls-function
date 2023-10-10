@@ -64,6 +64,19 @@ inputs:
     description: 'Version tags. Multiline'
     default: ''
     required: false
+  logs-disabled:
+    description: 'Disable functions logging. Default false'
+    default: 'false'
+    required: false
+  logs-group-id:
+    description: 'Logs group ID. If NOT set, logs will write to auto-created default group.'
+    default: ''
+    required: false
+  log-level:
+    description: 'Minimum log level (trace, debug, info, warn, error, fatal)'
+    default: 'unspecified'
+    required: false
+
 
 outputs:
   function-id:
