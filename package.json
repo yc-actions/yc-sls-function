@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@types/archiver": "^6.0.1",
-    "@types/jest": "^29.5.7",
+    "@types/jest": "^29.5.8",
     "@types/mustache": "^4.2.4",
     "@types/node": "^20.8.7",
     "@types/stream-buffers": "^3.0.6",
