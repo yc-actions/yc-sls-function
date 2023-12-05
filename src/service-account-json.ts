@@ -20,7 +20,10 @@ export function fromServiceAccountJsonFile(data: ServiceAccountJsonFileContents)
   }
 
   if (missingFields.length > 0) {
-    throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+    const missingFieldsString = missingFields.join(', ');
+    throw new Error(
+      `Service Account key provided in "yc-sa-json-credentials" is missing required fields: ${missingFieldsString}`,
+    );
   }
 
   return {

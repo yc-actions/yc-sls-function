@@ -29,7 +29,7 @@ describe('fromServiceAccountJsonFile', () => {
     };
 
     expect(() => fromServiceAccountJsonFile(data as ServiceAccountJsonFileContents)).toThrowError(
-      'Missing required fields: private_key, service_account_id',
+      'Service Account key provided in "yc-sa-json-credentials" is missing required fields: private_key, service_account_id',
     );
   });
 });
