@@ -10,6 +10,19 @@ export interface ServiceAccountJsonFileContents {
 }
 
 export function fromServiceAccountJsonFile(data: ServiceAccountJsonFileContents): IIAmCredentials {
+  const requiredFields = ['id', 'private_key', 'service_account_id'];
+  const missingFields: string[] = [];
+
+  for (const field of requiredFields) {
+    if (!data.hasOwnProperty(field)) {
+      missingFields.push(field);
+    }
+  }
+
+  if (missingFields.length > 0) {
+    throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+  }
+
   return {
     accessKeyId: data.id,
     privateKey: data.private_key,
