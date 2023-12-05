@@ -1,6 +1,6 @@
 {
   "name": "yc-actions-yc-sls-function",
-  "version": "2.9.1",
+  "version": "2.10.0",
   "description": "GitHub Action to deploy Serverless Function to Yandex Cloud.",
   "main": "lib/main.js",
   "scripts": {
