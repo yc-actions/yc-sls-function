@@ -48,7 +48,7 @@ See [action.yml](action.yml) for the full documentation for this action's inputs
 
 ## Permissions
 
-For this action to proceed, the utilized service account must possess the `serverless.functions.admin` role. Furthermore, the `iam.serviceAccounts.user` role is essential, as it allows for operations with service accounts and is necessary for using the `service-account` parameter.
+For this action to proceed, the utilized Service Account must possess the `serverless.functions.admin` role. Furthermore, the `iam.serviceAccounts.user` role is essential, as it allows for operations with service accounts and is necessary for using the `service-account` parameter.
 
 ## License Summary
 
