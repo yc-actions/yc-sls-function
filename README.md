@@ -25,6 +25,7 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
     function-name: 'test-function'
     runtime: 'nodejs16'
     memory: '256Mb'
+    service-account: 'kek*********'
     entrypoint: 'src/main.handler'
     environment: | 
       DEBUG=True
@@ -41,11 +42,13 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
 
 `yc-sa-json-credentials` should contain JSON with authorized key for Service Account. More info in [Yandex Cloud IAM documentation](https://cloud.yandex.ru/docs/container-registry/operations/authentication#sa-json).
 
+`service-account` (optional) is the Service Account that invokes the serverless function.
+
 See [action.yml](action.yml) for the full documentation for this action's inputs and outputs.
 
 ## Permissions
 
-To perform this action, it is required that the service account on behalf of which we are acting has granted the `serverless.functions.admin` role or greater.
+For this action to proceed, the utilized service account must possess the `serverless.functions.admin` role. Furthermore, the `iam.serviceAccounts.user` role is essential, as it allows for operations with service accounts and is necessary for using the `service-account` parameter.
 
 ## License Summary
 
