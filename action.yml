@@ -49,7 +49,7 @@ inputs:
     default: '5'
     required: false
   service-account:
-    description: 'Service account for function'
+    description: 'Service account which can invoke function'
     default: ''
     required: false
   secrets:
