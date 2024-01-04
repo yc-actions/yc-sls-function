@@ -1,8 +1,8 @@
-# GitHub Action to deploy Serverless Function to Yandex Cloud
+## GitHub Action to deploy Serverless Function to Yandex Cloud
 
 The action finds or creates Serverless Function in the given folder in Yandex Cloud and deploys new version.
 
-## Table of Contents
+**Table of Contents**
 
 <!-- toc -->
 
@@ -15,31 +15,30 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
 ## Usage
 
 ```yaml
-- name: Deploy Function
-  id: sls-func
-  uses: yc-actions/yc-sls-function@v2
-  with:
-    yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-    bucket: ${{ secrets.BUCKET }}
-    folder-id: 'b1g*********'
-    function-name: 'test-function'
-    runtime: 'nodejs16'
-    memory: '256Mb'
-    service-account: 'kek*********'
-    entrypoint: 'src/main.handler'
-    environment: | 
-      DEBUG=True
-      COUNT=1
-    include: | 
-      ./src
-      package.json
-    exclude: | 
-      **/*.ts
-    tags: |
-      ${{ GITHUB_SHA::6 }}
-      foo
+    - name: Deploy Function
+      id: sls-func
+      uses: yc-actions/yc-sls-function@v2
+      with:
+        yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+        bucket: ${{ secrets.BUCKET }}
+        folder-id: 'b1g*********'
+        function-name: 'test-function'
+        runtime: 'nodejs16'
+        memory: '256Mb'
+        service-account: 'kek*********'
+        entrypoint: 'src/main.handler'
+        environment: | 
+          DEBUG=True
+          COUNT=1
+        include: | 
+          ./src
+          package.json
+        exclude: | 
+          **/*.ts
+        tags: |
+          ${{ GITHUB_SHA::6 }}
+          foo
 ```
-
 `yc-sa-json-credentials` should contain JSON with authorized key for Service Account. More info in [Yandex Cloud IAM documentation](https://cloud.yandex.ru/docs/container-registry/operations/authentication#sa-json).
 
 `service-account` (optional) is the Service Account that invokes the serverless function.
