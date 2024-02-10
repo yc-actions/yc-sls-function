@@ -1,0 +1,18 @@
+pull_request_rules:
+
+  - name: Automatically approve and merge Dependabot PRs
+    conditions:
+      - base=main
+      - author=dependabot[bot]
+      - check-success=check-dist
+      - check-success=build
+      - -title~=(WIP|wip)
+      - -label~=(blocked|do-not-merge)
+      - -merged
+      - -closed
+    actions:
+      review:
+        type: APPROVE
+      merge:
+        method: squash
+
