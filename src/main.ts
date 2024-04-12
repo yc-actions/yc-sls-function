@@ -5,7 +5,7 @@ import * as streamBuffers from 'stream-buffers';
 import {minimatch} from 'minimatch';
 import {glob} from 'glob';
 
-import {decodeMessage, serviceClients, Session, waitForOperation} from '@yandex-cloud/nodejs-sdk';
+import {decodeMessage, errors, serviceClients, Session, waitForOperation} from '@yandex-cloud/nodejs-sdk';
 import {KB, parseMemory} from './memory';
 import * as fs from 'node:fs';
 import {fromServiceAccountJsonFile} from './service-account-json';
@@ -164,9 +164,10 @@ async function run(): Promise<void> {
 
     core.setOutput('time', new Date().toTimeString());
   } catch (error) {
-    if (error instanceof Error) {
-      core.setFailed(error.message);
+    if (error instanceof errors.ApiError) {
+      core.error(`${error.message}\nx-request-id: ${error.requestId}\nx-server-trace-id: ${error.serverTraceId}`);
     }
+    core.setFailed(error as Error);
   }
 }
 
