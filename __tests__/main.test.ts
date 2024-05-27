@@ -1,6 +1,5 @@
 import * as cp from 'child_process';
 import * as path from 'path';
-import * as fs from 'node:fs';
 import * as process from 'process';
 import {expect, test} from '@jest/globals';
 import {parseLockboxVariables, Secret, ZipInputs, zipSources} from '../src/main';
@@ -116,7 +115,9 @@ describe('zipSources', function () {
       const noneStartWithSrc = entries.every(e => !e.name.includes('src'));
       expect(noneStartWithSrc).toBeTruthy();
       expect(entries.length).toBe(2);
-      expect(entries[0].name).toBe('func.js');
+      entries.sort((a, b) => a.name.localeCompare(b.name));
+      expect(entries[0].name).toBe('foo/1.txt');
+      expect(entries[1].name).toBe('func.js');
     },
   );
 
