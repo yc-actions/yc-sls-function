@@ -43,7 +43,7 @@
     "@types/archiver": "^6.0.2",
     "@types/jest": "^29.5.12",
     "@types/mustache": "^4.2.5",
-    "@types/node": "^20.14.11",
+    "@types/node": "^22.0.0",
     "@types/stream-buffers": "^3.0.7",
     "@typescript-eslint/eslint-plugin": "^7.16.1",
     "@typescript-eslint/parser": "^7.16.1",
