@@ -31,7 +31,7 @@
     "@grpc/grpc-js": "^1.11.1",
     "@yandex-cloud/nodejs-sdk": "2.7.7",
     "archiver": "^7.0.1",
-    "axios": "^1.7.2",
+    "axios": "^1.7.3",
     "glob": "^11.0.0",
     "long": "5.2.3",
     "minimatch": "9.0.4",
