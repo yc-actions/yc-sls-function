@@ -57,7 +57,7 @@ Additionally, you may need to grant the following optional roles depending on yo
 |----------------------------|----------------------------------------------------------------------------------------|
 | `iam.serviceAccounts.user` | Providing the service account ID in parameters, ensuring access to the service account |
 | `vpc.user`                 | Deploying the function in a VPC with a specified network ID                            |
-| `functions.admin`          | Making the container public                                                            |
+| `functions.admin`          | Making the function public                                                             |
 
 ### Runtime permissions
 
