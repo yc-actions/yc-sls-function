@@ -47,7 +47,7 @@
     "@types/stream-buffers": "^3.0.7",
     "@typescript-eslint/eslint-plugin": "^7.16.1",
     "@typescript-eslint/parser": "^7.18.0",
-    "@vercel/ncc": "^0.38.1",
+    "@vercel/ncc": "^0.38.2",
     "dotenv": "^16.4.5",
     "eslint": "^8.57.1",
     "eslint-plugin-github": "^5.0.2",
