@@ -325,7 +325,7 @@ function parseIgnoreGlobPatterns(patterns: string[]): string[] {
     return result
 }
 
-function parseEnvironmentVariables(env: string[]): { [s: string]: string } {
+export function parseEnvironmentVariables(env: string[]): { [s: string]: string } {
     core.info(`Environment string: "${env}"`)
 
     const environment: { [key: string]: string } = {}
