@@ -325,13 +325,13 @@ function parseIgnoreGlobPatterns(patterns: string[]): string[] {
     return result
 }
 
-function parseEnvironmentVariables(env: string[]): { [s: string]: string } {
+export function parseEnvironmentVariables(env: string[]): { [s: string]: string } {
     core.info(`Environment string: "${env}"`)
 
     const environment: { [key: string]: string } = {}
     for (const line of env) {
-        const [key, ...value] = line.split('=')
-        environment[key.trim()] = value.join()?.trim()
+        const [key, value] = line.split(/=(.*)/s)
+        environment[key.trim()] = value.trim()
     }
 
     core.info(`EnvObject: "${JSON.stringify(environment)}"`)
