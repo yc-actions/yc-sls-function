@@ -181,7 +181,7 @@ describe('environment', () => {
             BASE64_KEY3: 'YmFzZTY0X2VuY29kZWRfd2l0aF9taWRkbGVfc2lnbl9lcXVhbD1yZXF1aXJlZA==',
             JUST_KEY_SHOULD_BE_A_KEY: 'zZTY0X2VuY29kZWRf'
         }
-        
+
         expect(result).toEqual(expected)
     })
 
