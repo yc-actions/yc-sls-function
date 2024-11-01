@@ -6,7 +6,7 @@
     "moduleResolution": "NodeNext",
     "baseUrl": "./",
     "sourceMap": true,
-    "outDir": "./lib",
+    "outDir": "./dist",
     "noImplicitAny": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
