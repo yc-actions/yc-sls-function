@@ -52,7 +52,7 @@
     "dotenv": "^16.4.7",
     "eslint-import-resolver-typescript": "^3.6.3",
     "eslint": "^8.57.0",
-    "eslint-plugin-github": "^5.0.2",
+    "eslint-plugin-github": "^5.1.4",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jest": "^28.9.0",
     "eslint-plugin-jsonc": "^2.18.2",
