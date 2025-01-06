@@ -1,5 +1,5 @@
-import { Buffer } from 'buffer'
-import fs from 'fs'
+import { Buffer } from 'node:buffer'
+import fs from 'node:fs'
 
 export interface IStorageObject {
     bucketName: string
@@ -48,7 +48,6 @@ export class StorageObject implements IStorageObject {
         )
     }
 
-    // eslint-disable-next-line no-undef
     async getData(encoding: BufferEncoding): Promise<string> {
         encoding = encoding || 'utf-8'
         const buffer = await this.bufferPromise
