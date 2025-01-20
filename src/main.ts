@@ -1,13 +1,26 @@
-import * as core from '@actions/core'
-import * as github from '@actions/github'
+import {
+    debug,
+    endGroup,
+    error,
+    getBooleanInput,
+    getInput,
+    getMultilineInput,
+    info,
+    setCommandEcho,
+    setFailed,
+    setOutput,
+    setSecret,
+    startGroup
+} from '@actions/core'
+import { context } from '@actions/github'
 import archiver from 'archiver'
-import * as streamBuffers from 'stream-buffers'
+import { WritableStreamBuffer } from 'stream-buffers'
 import { minimatch } from 'minimatch'
 import { glob } from 'glob'
 
 import { decodeMessage, errors, serviceClients, Session, waitForOperation } from '@yandex-cloud/nodejs-sdk'
 import { KB, parseMemory } from './memory'
-import * as fs from 'node:fs'
+import { lstatSync } from 'node:fs'
 import { fromServiceAccountJsonFile } from './service-account-json'
 import {
     CreateFunctionMetadata,
@@ -54,13 +67,13 @@ async function uploadToS3(
     const { GITHUB_SHA } = process.env
 
     if (!GITHUB_SHA) {
-        core.setFailed('Missing GITHUB_SHA')
+        setFailed('Missing GITHUB_SHA')
         throw new Error('Missing GITHUB_SHA')
     }
 
     //setting object name
     const bucketObjectName = `${functionId}/${GITHUB_SHA}.zip`
-    core.info(`Upload to bucket: "${bucket}/${bucketObjectName}"`)
+    info(`Upload to bucket: "${bucket}/${bucketObjectName}"`)
 
     const storageService = new StorageServiceImpl(sessionConfig)
 
@@ -70,7 +83,7 @@ async function uploadToS3(
 }
 
 async function getOrCreateFunctionId(session: Session, { folderId, functionName }: ActionInputs): Promise<string> {
-    core.startGroup('Find function id')
+    startGroup('Find function id')
     const functionService = session.client(serviceClients.FunctionServiceClient)
 
     const res = await functionService.list(
@@ -83,10 +96,10 @@ async function getOrCreateFunctionId(session: Session, { folderId, functionName 
     // If there is a function with the provided name in given folder, then return its id
     if (res.functions.length) {
         functionId = res.functions[0].id
-        core.info(`'There is the function named '${functionName}' in the folder already. Its id is '${functionId}'`)
+        info(`'There is the function named '${functionName}' in the folder already. Its id is '${functionId}'`)
     } else {
         // Otherwise create new a function and return its id.
-        const repo = github.context.repo
+        const repo = context.repo
 
         const op = await functionService.create(
             CreateFunctionRequest.fromPartial({
@@ -98,58 +111,58 @@ async function getOrCreateFunctionId(session: Session, { folderId, functionName 
         const finishedOp = await waitForOperation(op, session)
         if (finishedOp.metadata) {
             functionId = decodeMessage<CreateFunctionMetadata>(finishedOp.metadata).functionId
-            core.info(
+            info(
                 `There was no function named '${functionName}' in the folder. So it was created. Id is '${functionId}'`
             )
         } else {
-            core.error(`Failed to create function '${functionName}'`)
+            error(`Failed to create function '${functionName}'`)
             throw new Error('Failed to create function')
         }
     }
-    core.setOutput('function-id', functionId)
-    core.endGroup()
+    setOutput('function-id', functionId)
+    endGroup()
     return functionId
 }
 
 async function run(): Promise<void> {
-    core.setCommandEcho(true)
+    setCommandEcho(true)
 
     try {
-        const ycSaJsonCredentials = core.getInput('yc-sa-json-credentials', {
+        const ycSaJsonCredentials = getInput('yc-sa-json-credentials', {
             required: true
         })
-        core.setSecret(ycSaJsonCredentials)
+        setSecret(ycSaJsonCredentials)
 
         const serviceAccountJson = fromServiceAccountJsonFile(JSON.parse(ycSaJsonCredentials))
 
         const inputs: ActionInputs = {
-            folderId: core.getInput('folder-id', { required: true }),
-            functionName: core.getInput('function-name', { required: true }),
-            runtime: core.getInput('runtime', { required: true }),
-            entrypoint: core.getInput('entrypoint', { required: true }),
-            memory: parseMemory(core.getInput('memory', { required: false }) || '128Mb'),
-            include: core.getMultilineInput('include', { required: false }),
-            excludePattern: core.getMultilineInput('exclude', { required: false }),
-            sourceRoot: core.getInput('source-root', { required: false }) || '.',
-            executionTimeout: parseInt(core.getInput('execution-timeout', { required: false }) || '5', 10),
-            environment: core.getMultilineInput('environment', { required: false }),
-            serviceAccount: core.getInput('service-account', { required: false }),
-            bucket: core.getInput('bucket', { required: false }),
-            description: core.getInput('description', { required: false }),
-            secrets: core.getMultilineInput('secrets', { required: false }),
-            networkId: core.getInput('network-id', { required: false }),
-            tags: core.getMultilineInput('tags', { required: false }),
-            logsDisabled: core.getBooleanInput('logs-disabled', { required: false }) || false,
-            logsGroupId: core.getInput('logs-group-id', { required: false }),
-            logLevel: parseLogLevel(core.getInput('log-level', { required: false, trimWhitespace: true }))
+            folderId: getInput('folder-id', { required: true }),
+            functionName: getInput('function-name', { required: true }),
+            runtime: getInput('runtime', { required: true }),
+            entrypoint: getInput('entrypoint', { required: true }),
+            memory: parseMemory(getInput('memory', { required: false }) || '128Mb'),
+            include: getMultilineInput('include', { required: false }),
+            excludePattern: getMultilineInput('exclude', { required: false }),
+            sourceRoot: getInput('source-root', { required: false }) || '.',
+            executionTimeout: parseInt(getInput('execution-timeout', { required: false }) || '5', 10),
+            environment: getMultilineInput('environment', { required: false }),
+            serviceAccount: getInput('service-account', { required: false }),
+            bucket: getInput('bucket', { required: false }),
+            description: getInput('description', { required: false }),
+            secrets: getMultilineInput('secrets', { required: false }),
+            networkId: getInput('network-id', { required: false }),
+            tags: getMultilineInput('tags', { required: false }),
+            logsDisabled: getBooleanInput('logs-disabled', { required: false }) || false,
+            logsGroupId: getInput('logs-group-id', { required: false }),
+            logLevel: parseLogLevel(getInput('log-level', { required: false, trimWhitespace: true }))
         }
 
-        core.info('Function inputs set')
+        info('Function inputs set')
 
         const archive = archiver('zip', { zlib: { level: 9 } })
         const fileContents = await zipSources(inputs, archive)
 
-        core.info(`Buffer size: ${Buffer.byteLength(fileContents)}b`)
+        info(`Buffer size: ${Buffer.byteLength(fileContents)}b`)
 
         // Initialize SDK with your token
         const session = new Session({ serviceAccountJson })
@@ -162,12 +175,12 @@ async function run(): Promise<void> {
 
         await createFunctionVersion(session, functionId, fileContents, bucketObjectName, inputs)
 
-        core.setOutput('time', new Date().toTimeString())
-    } catch (error) {
-        if (error instanceof errors.ApiError) {
-            core.error(`${error.message}\nx-request-id: ${error.requestId}\nx-server-trace-id: ${error.serverTraceId}`)
+        setOutput('time', new Date().toTimeString())
+    } catch (err) {
+        if (err instanceof errors.ApiError) {
+            error(`${err.message}\nx-request-id: ${err.requestId}\nx-server-trace-id: ${err.serverTraceId}`)
         }
-        core.setFailed(error as Error)
+        setFailed(err as Error)
     }
 }
 
@@ -178,13 +191,13 @@ async function createFunctionVersion(
     bucketObjectName: string,
     inputs: ActionInputs
 ): Promise<void> {
-    core.startGroup('Create function version')
+    startGroup('Create function version')
     try {
-        core.info(`Function '${inputs.functionName}' ${functionId}`)
+        info(`Function '${inputs.functionName}' ${functionId}`)
 
         //convert variables
-        core.info(`Parsed memory: "${inputs.memory}"`)
-        core.info(`Parsed timeout: "${inputs.executionTimeout}"`)
+        info(`Parsed memory: "${inputs.memory}"`)
+        info(`Parsed timeout: "${inputs.executionTimeout}"`)
 
         const request = CreateFunctionVersionRequest.fromJSON({
             functionId,
@@ -213,7 +226,7 @@ async function createFunctionVersion(
 
         //get from bucket if supplied
         if (inputs.bucket) {
-            core.info(`From bucket: "${inputs.bucket}"`)
+            info(`From bucket: "${inputs.bucket}"`)
 
             request.package = Package.fromJSON({
                 bucketName: inputs.bucket,
@@ -230,23 +243,23 @@ async function createFunctionVersion(
         const operation = await functionService.createVersion(request)
         await waitForOperation(operation, session)
 
-        core.info('Operation complete')
+        info('Operation complete')
         let metadata
         if (operation.metadata) {
             metadata = decodeMessage<CreateFunctionVersionMetadata>(operation.metadata)
         } else {
-            core.error(`Failed to create function version`)
+            error(`Failed to create function version`)
             throw new Error('Failed to create function version')
         }
-        core.setOutput('version-id', metadata.functionVersionId)
-    } catch (error) {
-        if ('description' in (error as object)) {
-            core.setFailed((error as { description: string }).description)
+        setOutput('version-id', metadata.functionVersionId)
+    } catch (err) {
+        if ('description' in (err as object)) {
+            setFailed((err as { description: string }).description)
         } else {
-            core.setFailed(error as Error)
+            setFailed(err as Error)
         }
     } finally {
-        core.endGroup()
+        endGroup()
     }
 }
 
@@ -257,18 +270,18 @@ export interface ZipInputs {
 }
 
 export async function zipSources(inputs: ZipInputs, archive: archiver.Archiver): Promise<Buffer> {
-    core.startGroup('ZipDirectory')
+    startGroup('ZipDirectory')
 
     try {
-        const outputStreamBuffer = new streamBuffers.WritableStreamBuffer({
+        const outputStreamBuffer = new WritableStreamBuffer({
             initialSize: 1000 * KB, // start at 1000 kilobytes.
             incrementAmount: 1000 * KB // grow by 1000 kilobytes each time buffer overflows.
         })
 
-        core.info('Archive initialize')
+        info('Archive initialize')
 
         archive.on('entry', e => {
-            core.info(`add: ${e.name}`)
+            info(`add: ${e.name}`)
         })
 
         const workspace = process.env['GITHUB_WORKSPACE'] ?? ''
@@ -280,14 +293,14 @@ export async function zipSources(inputs: ZipInputs, archive: archiver.Archiver):
             const pathFromSourceRoot = path.join(root, include)
             const matches = glob.sync(pathFromSourceRoot, { absolute: false })
             for (const match of matches) {
-                if (fs.lstatSync(match).isDirectory()) {
-                    core.debug(`match:  dir ${match}`)
+                if (lstatSync(match).isDirectory()) {
+                    debug(`match:  dir ${match}`)
                     archive.directory(pathFromSourceRoot, include, data => {
                         const res = !patterns.map(p => minimatch(data.name, p)).some(x => x)
                         return res ? data : false
                     })
                 } else {
-                    core.debug(`match: file ${match}`)
+                    debug(`match: file ${match}`)
                     archive.file(match, { name: path.relative(root, match) })
                 }
             }
@@ -295,11 +308,11 @@ export async function zipSources(inputs: ZipInputs, archive: archiver.Archiver):
 
         await archive.finalize()
 
-        core.info('Archive finalized')
+        info('Archive finalized')
 
         outputStreamBuffer.end()
         const buffer = outputStreamBuffer.getContents()
-        core.info('Buffer object created')
+        info('Buffer object created')
 
         if (!buffer) {
             throw Error('Failed to initialize Buffer')
@@ -307,7 +320,7 @@ export async function zipSources(inputs: ZipInputs, archive: archiver.Archiver):
 
         return buffer
     } finally {
-        core.endGroup()
+        endGroup()
     }
 }
 
@@ -321,12 +334,12 @@ function parseIgnoreGlobPatterns(patterns: string[]): string[] {
         }
     }
 
-    core.info(`Source ignore pattern: "${JSON.stringify(result)}"`)
+    info(`Source ignore pattern: "${JSON.stringify(result)}"`)
     return result
 }
 
 export function parseEnvironmentVariables(env: string[]): { [s: string]: string } {
-    core.info(`Environment string: "${env}"`)
+    info(`Environment string: "${env}"`)
 
     const environment: { [key: string]: string } = {}
     for (const line of env) {
@@ -334,7 +347,7 @@ export function parseEnvironmentVariables(env: string[]): { [s: string]: string 
         environment[key.trim()] = value.trim()
     }
 
-    core.info(`EnvObject: "${JSON.stringify(environment)}"`)
+    info(`EnvObject: "${JSON.stringify(environment)}"`)
     return environment
 }
 
@@ -347,7 +360,7 @@ export type Secret = {
 
 // environmentVariable=id/versionId/key
 export function parseLockboxVariables(secrets: string[]): Secret[] {
-    core.info(`Secrets string: "${secrets}"`)
+    info(`Secrets string: "${secrets}"`)
     const secretsArr: Secret[] = []
 
     for (const line of secrets) {
@@ -360,7 +373,7 @@ export function parseLockboxVariables(secrets: string[]): Secret[] {
         secretsArr.push(secret)
     }
 
-    core.info(`SecretsObject: "${JSON.stringify(secretsArr)}"`)
+    info(`SecretsObject: "${JSON.stringify(secretsArr)}"`)
     return secretsArr
 }
 
