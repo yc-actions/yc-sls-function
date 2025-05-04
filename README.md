@@ -41,7 +41,7 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
 One of `yc-sa-json-credentials`, `yc-iam-token` or `yc-sa-id` should be provided depending on the authentication method you
 want to use. The action will use the first one it finds.
 * `yc-sa-json-credentials` should contain JSON with authorized key for Service Account. More info
-in [Yandex Cloud IAM documentation](https://yandex.cloud/en/docs/iam/operations/iam-token/create-for-sa).
+in [Yandex Cloud IAM documentation](https://yandex.cloud/en/docs/iam/operations/authentication/manage-authorized-keys#cli_1).
 * `yc-iam-token` should contain IAM token. It can be obtained using `yc iam create-token` command or using
 [yc-actions/yc-iam-token-fed](https://github.com/yc-actions/yc-iam-token-fed)
 ```yaml
