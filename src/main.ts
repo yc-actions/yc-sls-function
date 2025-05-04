@@ -3,13 +3,13 @@ import {
     endGroup,
     error,
     getBooleanInput,
+    getIDToken,
     getInput,
     getMultilineInput,
     info,
     setCommandEcho,
     setFailed,
     setOutput,
-    setSecret,
     startGroup
 } from '@actions/core'
 import { context } from '@actions/github'
@@ -32,9 +32,10 @@ import {
 import { Package } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function'
 import { StorageServiceImpl } from './storage'
 import { StorageObject } from './storage/storage-object'
-import { IIAmCredentials } from '@yandex-cloud/nodejs-sdk/dist/types'
+import { SessionConfig } from '@yandex-cloud/nodejs-sdk/dist/types'
 import path from 'node:path'
 import { parseLogLevel } from './log-level'
+import axios from 'axios'
 
 type ActionInputs = {
     folderId: string
@@ -61,7 +62,7 @@ type ActionInputs = {
 async function uploadToS3(
     bucket: string,
     functionId: string,
-    sessionConfig: IIAmCredentials,
+    sessionConfig: SessionConfig,
     fileContents: Buffer
 ): Promise<string> {
     const { GITHUB_SHA } = process.env
@@ -128,12 +129,28 @@ async function run(): Promise<void> {
     setCommandEcho(true)
 
     try {
-        const ycSaJsonCredentials = getInput('yc-sa-json-credentials', {
-            required: true
-        })
-        setSecret(ycSaJsonCredentials)
-
-        const serviceAccountJson = fromServiceAccountJsonFile(JSON.parse(ycSaJsonCredentials))
+        let sessionConfig: SessionConfig = {}
+        const ycSaJsonCredentials = getInput('yc-sa-json-credentials')
+        const ycIamToken = getInput('yc-iam-token')
+        const ycSaId = getInput('yc-sa-id')
+        if (ycSaJsonCredentials !== '') {
+            const serviceAccountJson = fromServiceAccountJsonFile(JSON.parse(ycSaJsonCredentials))
+            info('Parsed Service account JSON')
+            sessionConfig = { serviceAccountJson }
+        } else if (ycIamToken !== '') {
+            sessionConfig = { iamToken: ycIamToken }
+            info('Using IAM token')
+        } else if (ycSaId !== '') {
+            const ghToken = await getIDToken()
+            if (!ghToken) {
+                throw new Error('No credentials provided')
+            }
+            const saToken = await exchangeToken(ghToken, ycSaId)
+            sessionConfig = { iamToken: saToken }
+        } else {
+            throw new Error('No credentials')
+        }
+        const session = new Session(sessionConfig)
 
         const inputs: ActionInputs = {
             folderId: getInput('folder-id', { required: true }),
@@ -164,13 +181,10 @@ async function run(): Promise<void> {
 
         info(`Buffer size: ${Buffer.byteLength(fileContents)}b`)
 
-        // Initialize SDK with your token
-        const session = new Session({ serviceAccountJson })
-
         const functionId = await getOrCreateFunctionId(session, inputs)
         let bucketObjectName = ''
         if (inputs.bucket) {
-            bucketObjectName = await uploadToS3(inputs.bucket, functionId, serviceAccountJson, fileContents)
+            bucketObjectName = await uploadToS3(inputs.bucket, functionId, sessionConfig, fileContents)
         }
 
         await createFunctionVersion(session, functionId, fileContents, bucketObjectName, inputs)
@@ -375,6 +389,33 @@ export function parseLockboxVariables(secrets: string[]): Secret[] {
 
     info(`SecretsObject: "${JSON.stringify(secretsArr)}"`)
     return secretsArr
+}
+
+async function exchangeToken(token: string, saId: string): Promise<string> {
+    info(`Exchanging token for service account ${saId}`)
+    const res = await axios.post(
+        'https://auth.yandex.cloud/oauth/token',
+        {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            requested_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+            audience: saId,
+            subject_token: token,
+            subject_token_type: 'urn:ietf:params:oauth:token-type:id_token'
+        },
+        {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        }
+    )
+    if (res.status !== 200) {
+        throw new Error(`Failed to exchange token: ${res.status} ${res.statusText}`)
+    }
+    if (!res.data.access_token) {
+        throw new Error(`Failed to exchange token: ${res.data.error} ${res.data.error_description}`)
+    }
+    info(`Token exchanged successfully`)
+    return res.data.access_token
 }
 
 run()

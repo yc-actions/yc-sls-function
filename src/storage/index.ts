@@ -1,7 +1,7 @@
 import { IamTokenService } from '@yandex-cloud/nodejs-sdk/dist/token-service/iam-token-service'
 import axios from 'axios'
 import { IStorageObject, StorageObject } from './storage-object'
-import { IIAmCredentials } from '@yandex-cloud/nodejs-sdk/dist/types'
+import { SessionConfig } from '@yandex-cloud/nodejs-sdk/dist/types'
 
 interface StorageService {
     getObject(bucketName: string, objectName: string): Promise<IStorageObject>
@@ -15,9 +15,13 @@ export class StorageServiceImpl implements StorageService {
     private readonly _tokenCreator: () => Promise<string>
     private $method_definitions: unknown
 
-    constructor(sessionConfig: IIAmCredentials) {
-        const ts = new IamTokenService(sessionConfig)
-        this._tokenCreator = async () => ts.getToken()
+    constructor(sessionConfig: SessionConfig) {
+        if ('serviceAccountJson' in sessionConfig) {
+            const ts = new IamTokenService(sessionConfig.serviceAccountJson)
+            this._tokenCreator = async () => ts.getToken()
+        } else if ('iamToken' in sessionConfig) {
+            this._tokenCreator = async () => sessionConfig.iamToken
+        } else throw new Error('IAMToken not implemented.')
 
         this.$method_definitions = {}
     }
