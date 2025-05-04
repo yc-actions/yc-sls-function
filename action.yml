@@ -3,8 +3,20 @@ description: 'GitHub Action to deploy Serverless Function to Yandex Cloud.'
 author: 'Nikolay Matrosov'
 inputs:
   yc-sa-json-credentials:
-    required: true
-    description: 'Json containing authorized key for Service Account. More info https://cloud.yandex.ru/docs/container-registry/operations/authentication#sa-json'
+    required: false
+    description: 'JSON containing authorized key for Service Account.
+      Either this or `yc-iam-token` or `yc-sa-id` should be provided.
+      More info https://cloud.yandex.ru/docs/container-registry/operations/authentication#sa-json'
+  yc-iam-token:
+    required: false
+    description: 'IAM token for Yandex Cloud. 
+      Either this or `yc-sa-json-credentials` or `yc-sa-id` should be provided.
+      More info https://yandex.cloud/ru/docs/iam/concepts/authorization/iam-token'
+  yc-sa-id:
+    required: false
+    description: 'Service Account ID. Will be uses to exchange GitHub token to Yandex Cloud token.
+      Either this or `yc-iam-token` or `yc-sa-json-credentials` should be provided.
+      More info https://yandex.cloud/ru/docs/iam/concepts/workload-identity'
   folder-id:
     required: true
     description: 'Folder ID'
