@@ -88,7 +88,54 @@ inputs:
     description: 'Minimum log level (trace, debug, info, warn, error, fatal)'
     default: ''
     required: false
-
+  async-retries-count:
+    description:
+      'Number of retries of version invocation. Setting this parameter turns on the asynchronous invocations of
+      the version. If not empty, async-[success|failure]-empty-target, or async-[success|failure]-ymq-* should be
+      set. For the details, read the API documentation:
+      https://yandex.cloud/en/docs/functions/functions/api-ref/Function/createVersion#yandex.cloud.serverless.functions.v1.AsyncInvocationConfig.ResponseTarget'
+    default: ''
+    required: false
+  async-success-empty-target:
+    description: |
+      Target for successful result of the version's invocation.
+      Target to ignore a result. This or async-success-ymq-target-* parameters should be defined.
+    default: ''
+    required: false
+  async-success-ymq-target-queue-arn:
+    description: |
+      Target for successful result of the version's invocation.
+      Queue ARN if target should send a result to YMQ.
+    default: ''
+    required: false
+  async-success-ymq-target-service-account-id:
+    description: |
+      Target for successful result of the version's invocation.
+      Service account which has write permission on the queue, if target should send a result to YMQ.
+    default: ''
+    required: false
+  async-failure-empty-target:
+    description: |
+      Target for unsuccessful result, if all retries failed.
+      Target to ignore a result. This or async-success-ymq-target-* parameters should be defined.
+    default: ''
+    required: false
+  async-failure-ymq-target-queue-arn:
+    description: |
+      Target for unsuccessful result, if all retries failed.
+      Queue ARN if target should send a result to YMQ.
+    default: ''
+    required: false
+  async-failure-ymq-target-service-account-id:
+    description: |
+      Target for unsuccessful result, if all retries failed.
+      Service account which has write permission on the queue, if target should send a result to YMQ.
+    default: ''
+    required: false
+  async-service-account-id:
+    description: 'Service account which can invoke version'
+    default: ''
+    required: false
 
 outputs:
   function-id:
