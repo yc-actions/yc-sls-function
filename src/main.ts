@@ -57,6 +57,14 @@ type ActionInputs = {
     logsDisabled: boolean
     logsGroupId: string
     logLevel: number
+    asyncRetriesCount?: number
+    asyncSuccessEmtpyTarget?: object
+    asyncSuccessYmqTargetQueueArn: string
+    asyncSuccessYmqTargetServiceAccountId: string
+    asyncFailureEmtpyTarget?: object
+    asyncFailureYmqTargetQueueArn: string
+    asyncFailureYmqTargetServiceAccountId: string
+    asyncServiceAccountId: string
 }
 
 async function uploadToS3(
@@ -171,7 +179,21 @@ async function run(): Promise<void> {
             tags: getMultilineInput('tags', { required: false }),
             logsDisabled: getBooleanInput('logs-disabled', { required: false }) || false,
             logsGroupId: getInput('logs-group-id', { required: false }),
-            logLevel: parseLogLevel(getInput('log-level', { required: false, trimWhitespace: true }))
+            logLevel: parseLogLevel(getInput('log-level', { required: false, trimWhitespace: true })),
+            asyncRetriesCount: getInput('async-retries-count', { required: false })
+                ? parseInt(getInput('async-retries-count', { required: false }), 10)
+                : undefined,
+            asyncSuccessEmtpyTarget: getInput('async-success-empty-target', { required: false }) ? {} : undefined,
+            asyncSuccessYmqTargetQueueArn: getInput('async-success-ymq-target-queue-arn', { required: false }),
+            asyncSuccessYmqTargetServiceAccountId: getInput('async-success-ymq-target-service-account-id', {
+                required: false
+            }),
+            asyncFailureEmtpyTarget: getInput('async-failure-empty-target', { required: false }) ? {} : undefined,
+            asyncFailureYmqTargetQueueArn: getInput('async-failure-ymq-target-queue-arn', { required: false }),
+            asyncFailureYmqTargetServiceAccountId: getInput('async-failure-ymq-target-service-account-id', {
+                required: false
+            }),
+            asyncServiceAccountId: getInput('async-service-account-id', { required: false })
         }
 
         info('Function inputs set')
@@ -233,6 +255,28 @@ async function createFunctionVersion(
                 disabled: inputs.logsDisabled,
                 logGroupId: inputs.logsGroupId,
                 minLevel: inputs.logLevel
+            },
+            asyncInvocationConfig: {
+                serviceAccountId: inputs.asyncServiceAccountId,
+                retriesCount: inputs.asyncRetriesCount,
+                successTarget: {
+                    emptyTarget: inputs.asyncSuccessEmtpyTarget,
+                    ymqTarget: inputs.asyncSuccessEmtpyTarget
+                        ? undefined
+                        : {
+                              serviceAccountId: inputs.asyncSuccessYmqTargetServiceAccountId,
+                              queueArn: inputs.asyncSuccessYmqTargetQueueArn
+                          }
+                },
+                failureTarget: {
+                    emptyTarget: inputs.asyncFailureEmtpyTarget,
+                    ymqTarget: inputs.asyncFailureEmtpyTarget
+                        ? undefined
+                        : {
+                              serviceAccountId: inputs.asyncFailureYmqTargetServiceAccountId,
+                              queueArn: inputs.asyncFailureYmqTargetQueueArn
+                          }
+                }
             }
         })
 
