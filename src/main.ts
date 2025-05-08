@@ -438,4 +438,6 @@ async function exchangeToken(token: string, saId: string): Promise<string> {
     return res.data.access_token
 }
 
-run()
+if (process.env['NODE_ENV'] !== 'test') {
+    run()
+}
