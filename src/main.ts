@@ -256,28 +256,30 @@ async function createFunctionVersion(
                 logGroupId: inputs.logsGroupId,
                 minLevel: inputs.logLevel
             },
-            asyncInvocationConfig: {
-                serviceAccountId: inputs.asyncServiceAccountId,
-                retriesCount: inputs.asyncRetriesCount,
-                successTarget: {
-                    emptyTarget: inputs.asyncSuccessEmtpyTarget,
-                    ymqTarget: inputs.asyncSuccessEmtpyTarget
-                        ? undefined
-                        : {
-                              serviceAccountId: inputs.asyncSuccessYmqTargetServiceAccountId,
-                              queueArn: inputs.asyncSuccessYmqTargetQueueArn
-                          }
-                },
-                failureTarget: {
-                    emptyTarget: inputs.asyncFailureEmtpyTarget,
-                    ymqTarget: inputs.asyncFailureEmtpyTarget
-                        ? undefined
-                        : {
-                              serviceAccountId: inputs.asyncFailureYmqTargetServiceAccountId,
-                              queueArn: inputs.asyncFailureYmqTargetQueueArn
-                          }
+            ...(inputs.asyncRetriesCount !== undefined && {
+                asyncInvocationConfig: {
+                    serviceAccountId: inputs.asyncServiceAccountId,
+                    retriesCount: inputs.asyncRetriesCount,
+                    successTarget: {
+                        emptyTarget: inputs.asyncSuccessEmtpyTarget,
+                        ymqTarget: inputs.asyncSuccessEmtpyTarget
+                            ? undefined
+                            : {
+                                  serviceAccountId: inputs.asyncSuccessYmqTargetServiceAccountId,
+                                  queueArn: inputs.asyncSuccessYmqTargetQueueArn
+                              }
+                    },
+                    failureTarget: {
+                        emptyTarget: inputs.asyncFailureEmtpyTarget,
+                        ymqTarget: inputs.asyncFailureEmtpyTarget
+                            ? undefined
+                            : {
+                                  serviceAccountId: inputs.asyncFailureYmqTargetServiceAccountId,
+                                  queueArn: inputs.asyncFailureYmqTargetQueueArn
+                              }
+                    }
                 }
-            }
+            })
         })
 
         const functionService = session.client(serviceClients.FunctionServiceClient)
