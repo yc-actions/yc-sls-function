@@ -61,7 +61,11 @@ inputs:
     default: '5'
     required: false
   service-account:
-    description: 'Service account for function'
+    description: 'Service account ID for function'
+    default: ''
+    required: false
+  service-account-name:
+    description: 'Service account name for function. Will be used to find out the ID of SA.'
     default: ''
     required: false
   secrets:
@@ -86,6 +90,66 @@ inputs:
     required: false
   log-level:
     description: 'Minimum log level (trace, debug, info, warn, error, fatal)'
+    default: ''
+    required: false
+  async:
+    description: 'Enable async invocation'
+    default: 'false'
+    required: false
+  async-sa-id:
+    description: |
+      Service account which has permission to invoke the function.
+      If not set, the function will be invoked with the default service account.
+    default: ''
+    required: false
+  async-sa-name:
+    description: |
+      Service account which has permission to invoke the function.
+      If not set, the function will be invoked with the default service account.
+      Use either this or `async-sa-id`.
+    default: ''
+    required: false
+  async-retries-count:
+    description:
+      'Number of retries of async invocations.'
+    default: ''
+    required: false
+  async-success-ymq-arn:
+    description: |
+      Target for successful result of the version's invocation.
+      Queue ARN if target should send a result to YMQ.
+    default: ''
+    required: false
+  async-success-sa-id:
+    description: |
+      Target for successful result of the version's invocation.
+      Id of service account which has write permission on the queue, if target should send a result to YMQ.
+    default: ''
+    required: false
+  async-success-sa-name:
+    description: |
+      Target for successful result of the version's invocation.
+      Name of service account which has write permission on the queue, if target should send a result to YMQ.
+      Use either this or `async-success-sa-id`.
+    default: ''
+    required: false
+  async-failure-ymq-arn:
+    description: |
+      Target for unsuccessful result, if all retries failed.
+      Queue ARN if target should send a result to YMQ.
+    default: ''
+    required: false
+  async-failure-sa-id:
+    description: |
+      Target for unsuccessful result, if all retries failed.
+      Service account which has write permission on the queue, if target should send a result to YMQ.
+    default: ''
+    required: false
+  async-failure-sa-name:
+    description: |
+      Target for unsuccessful result, if all retries failed.
+      Name of service account which has write permission on the queue, if target should send a result to YMQ.
+      Use either this or `async-failure-sa-id`.
     default: ''
     required: false
 

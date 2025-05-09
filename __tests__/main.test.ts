@@ -1,194 +1,294 @@
-import { expect, test } from '@jest/globals'
-import { parseEnvironmentVariables, parseLockboxVariables, Secret, ZipInputs, zipSources } from '../src/main'
-import archiver from 'archiver'
+import * as core from '@actions/core'
+import {
+    __getMocks,
+    __setCreateFunctionFail,
+    __setCreateVersionFail,
+    __setFunctionList,
+    __setServiceAccountList,
+    __setVersionList
+} from '@yandex-cloud/nodejs-sdk'
+import * as main from '../src/main'
 
-// shows how the runner will run a javascript action with env / stdout protocol
-describe('zipSources', function () {
-    test('it should add files from include', async () => {
-        const archive = archiver('zip', { zlib: { level: 9 } })
-        const inputs: ZipInputs = {
-            include: ['./src'],
-            excludePattern: [],
-            sourceRoot: '.'
-        }
+import { context } from '@actions/github'
+import axios from 'axios'
+import { Instance } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/compute/v1/instance'
+import { ServiceAccount } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/iam/v1/service_account'
 
-        const entries: archiver.EntryData[] = []
-        archive.on('entry', e => entries.push(e))
-        await zipSources(inputs, archive)
+declare module '@yandex-cloud/nodejs-sdk' {
+    function __setFunctionList(value: Instance[]): void
 
-        const allStartWithSrc = entries.every(e => e.name.includes('src'))
-        expect(allStartWithSrc).toBeTruthy()
-    })
+    function __setVersionList(value: Instance[]): void
 
-    test('it should drop files from if they do not match include patterns', async () => {
-        const archive = archiver('zip', { zlib: { level: 9 } })
-        const inputs: ZipInputs = {
-            include: ['./src/*.js'],
-            excludePattern: [],
-            sourceRoot: '.'
-        }
+    function __setServiceAccountList(value: ServiceAccount[]): void
 
-        const entries: archiver.EntryData[] = []
-        archive.on('entry', e => entries.push(e))
-        await zipSources(inputs, archive)
+    function __setCreateFunctionFail(value: boolean): void
 
-        const allStartWithSrc = entries.every(e => e.name.includes('src'))
-        expect(allStartWithSrc).toBeTruthy()
-        expect(entries.length).toBe(1)
-        expect(entries[0].name).toBe('src/func.js')
-    })
+    function __setCreateVersionFail(value: boolean): void
 
-    test('it should drop files from if they match exclude patterns', async () => {
-        const archive = archiver('zip', { zlib: { level: 9 } })
-        const inputs: ZipInputs = {
-            include: ['./src'],
-            excludePattern: ['*.txt'],
-            sourceRoot: '.'
-        }
+    function __getMocks(): any
+}
 
-        const entries: archiver.EntryData[] = []
-        archive.on('entry', e => entries.push(e))
-        await zipSources(inputs, archive)
+jest.mock('../src/storage')
 
-        const allStartWithSrc = entries.every(e => e.name.includes('src'))
-        expect(allStartWithSrc).toBeTruthy()
-        expect(entries.length).toBe(8)
-    })
+// Mock the action's main function
+const runMock = jest.spyOn(main, 'run')
 
-    test('it should drop folder prefix if sourceRoot provided', async () => {
-        const archive = archiver('zip', { zlib: { level: 9 } })
-        const inputs: ZipInputs = {
-            include: ['.'],
-            excludePattern: [],
-            sourceRoot: './src'
-        }
+// Mock the GitHub Actions core library
+let errorMock: jest.SpyInstance
+let getInputMock: jest.SpyInstance
+let getBooleanInputMock: jest.SpyInstance
+let setFailedMock: jest.SpyInstance
+let setOutputMock: jest.SpyInstance
+let getIdTokenMock: jest.SpyInstance
+let axiosPostMock: jest.SpyInstance
 
-        const entries: archiver.EntryData[] = []
-        archive.on('entry', e => entries.push(e))
-        await zipSources(inputs, archive)
+// yandex sdk mock
 
-        const noneStartWithSrc = entries.every(e => !e.name.includes('src'))
+const requiredInputs: Record<string, string> = {
+    'folder-id': 'folderid',
+    'function-name': 'my-function',
+    runtime: 'nodejs16',
+    entrypoint: 'index.handler',
+    'logs-disabled': 'false',
+    async: 'false'
+}
 
-        expect(noneStartWithSrc).toBeTruthy()
-        expect(entries.length).toEqual(9)
-    })
+const defaultValues: Record<string, string> = {
+    ...requiredInputs,
+    bucket: 'some-bucket',
+    sourceRoot: '.',
+    memory: '128Mb',
+    environment: 'FOO=BAR\nFOO2=BAR2',
+    'execution-timeout': '5',
+    'service-account': 'serviceaccountid',
+    'service-account-name': '',
+    secrets: '',
+    'network-id': '',
+    tags: '',
+    'logs-disabled': 'false',
+    'logs-group-id': '',
+    'log-level': '',
+    async: 'false',
+    'async-sa-id': '',
+    'async-sa-name': '',
+    'async-retries-count': '',
+    'async-success-ymq-arn': '',
+    'async-success-sa-id': '',
+    'async-success-sa-name': '',
+    'async-failure-ymq-arn': '',
+    'async-failure-sa-id': '',
+    'async-failure-sa-name': ''
+}
 
-    test.each([['./src'], ['./src/'], ['src']])(
-        'it should respect source root and include only needed files with root %s',
-        async sourceRoot => {
-            const archive = archiver('zip', { zlib: { level: 9 } })
-            const inputs: ZipInputs = {
-                include: ['./*.js', 'foo/1.txt'],
-                excludePattern: [],
-                sourceRoot
+const asyncInputs: Record<string, string> = {
+    ...defaultValues,
+    async: 'true',
+    'async-sa-id': 'async-sa-id',
+    'async-sa-name': '',
+    'async-retries-count': '3',
+    'async-success-ymq-arn': 'arn:aws:sqs:us-east-1:123456789012:queue-name',
+    'async-success-sa-id': 'success-sa-id',
+    'async-success-sa-name': '',
+    'async-failure-ymq-arn': 'arn:aws:sqs:us-east-1:123456789012:queue-name',
+    'async-failure-sa-id': 'failure-sa-id',
+    'async-failure-sa-name': ''
+}
+
+const ycSaJsonCredentials: Record<string, string> = {
+    'yc-sa-json-credentials': `{
+    "id": "id",
+    "created_at": "2021-01-01T00:00:00Z", 
+    "key_algorithm": "RSA_2048",
+    "service_account_id": "service_account_id",
+    "private_key": "private_key",
+    "public_key": "public_key"
+  }`
+}
+
+describe('action', () => {
+    beforeEach(() => {
+        jest.clearAllMocks()
+
+        errorMock = jest.spyOn(core, 'error').mockImplementation()
+        getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
+        getBooleanInputMock = jest.spyOn(core, 'getBooleanInput').mockImplementation()
+        setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
+        setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
+        getIdTokenMock = jest.spyOn(core, 'getIDToken').mockImplementation(async () => {
+            return 'github-token'
+        })
+        axiosPostMock = jest.spyOn(axios, 'post').mockImplementation(async () => {
+            return {
+                status: 200,
+                data: {
+                    access_token: 'iam-token'
+                }
             }
-
-            const entries: archiver.EntryData[] = []
-            archive.on('entry', e => entries.push(e))
-            await zipSources(inputs, archive)
-
-            const noneStartWithSrc = entries.every(e => !e.name.includes('src'))
-            expect(noneStartWithSrc).toBeTruthy()
-            expect(entries.length).toBe(2)
-            entries.sort((a, b) => a.name.localeCompare(b.name))
-            expect(entries[0].name).toBe('foo/1.txt')
-            expect(entries[1].name).toBe('func.js')
-        }
-    )
-
-    test('it should add folders', async () => {
-        const archive = archiver('zip', { zlib: { level: 9 } })
-        const inputs: ZipInputs = {
-            include: ['./src/foo', './src/bar/*'],
-            excludePattern: [],
-            sourceRoot: '.'
-        }
-
-        const entries: archiver.EntryData[] = []
-        archive.on('entry', e => entries.push(e))
-        await zipSources(inputs, archive)
-
-        const allStartWithSrc = entries.every(e => e.name.includes('src'))
-        expect(allStartWithSrc).toBeTruthy()
-        expect(entries.length).toBe(4)
-        expect(entries.map(x => x.name).sort()).toMatchSnapshot()
-    })
-
-    test('it should ignore empty lines in include', async () => {
-        const archive = archiver('zip', { zlib: { level: 9 } })
-        const inputs: ZipInputs = {
-            include: ['func.js', 'foo/1.txt', ''],
-            excludePattern: [],
-            sourceRoot: './src/'
-        }
-
-        const entries: archiver.EntryData[] = []
-        archive.on('entry', e => entries.push(e))
-        await zipSources(inputs, archive)
-
-        const noneStartWithSrc = entries.every(e => !e.name.includes('src'))
-        expect(noneStartWithSrc).toBeTruthy()
-        expect(entries.length).toEqual(2)
-        expect(entries.map(x => x.name).sort()).toMatchSnapshot()
-    })
-})
-
-describe('lockbox', () => {
-    test('it should return right lockbox secrets', () => {
-        const input = ['ENV_VAR_1=id/verId/VAR_1', 'ENV_VAR_2=id/verId/VAR_2']
-        const result = parseLockboxVariables(input)
-        const expected: Secret[] = [
-            {
-                environmentVariable: 'ENV_VAR_1',
-                id: 'id',
-                versionId: 'verId',
-                key: 'VAR_1'
-            },
-            {
-                environmentVariable: 'ENV_VAR_2',
-                id: 'id',
-                versionId: 'verId',
-                key: 'VAR_2'
+        })
+        jest.spyOn(context, 'repo', 'get').mockImplementation(() => {
+            return {
+                owner: 'some-owner',
+                repo: 'some-repo'
             }
-        ]
-        expect(result).toEqual(expected)
+        })
+        __setServiceAccountList([
+            ServiceAccount.fromJSON({
+                id: 'serviceaccountid'
+            })
+        ])
+        __setCreateFunctionFail(false)
+        __setCreateVersionFail(false)
+        process.env['GITHUB_REPOSITORY'] = 'owner/repo'
+        process.env['GITHUB_SHA'] = 'sha'
+    })
+    afterEach(() => {
+        jest.clearAllMocks()
+        __setFunctionList([])
+        __setVersionList([])
     })
 
-    test.each(['123412343', '123=id', '123=id/verId', '123=id/verId/'])(
-        'it should throw error when bad input provided %s',
-        input => {
-            expect(() => parseLockboxVariables([input])).toThrow()
-        }
-    )
-})
+    it('should run with required inputs', async () => {
+        setupMockInputs({ ...requiredInputs, ...ycSaJsonCredentials })
 
-describe('environment', () => {
-    test('it should return right lockbox secrets', () => {
-        const input = [
-            'KEY1=value1',
-            'BASE64_KEY1=YmFzZTY0X2VuY29kZWRfd2l0aF9lcXVhbF9zaWduXzE=',
-            'BASE64_KEY2=YmFzZTY0X2VuY29kZWRfd2l0aF9lcXVhbF9zaWduXzI==',
-            'BASE64_KEY3=YmFzZTY0X2VuY29kZWRfd2l0aF9taWRkbGVfc2lnbl9lcXVhbD1yZXF1aXJlZA==',
-            'JUST_KEY_SHOULD_BE_A_KEY=zZTY0X2VuY29kZWRf'
-        ]
+        await main.run()
 
-        const result = parseEnvironmentVariables(input)
-
-        const expected: Record<string, string> = {
-            KEY1: 'value1',
-            BASE64_KEY1: 'YmFzZTY0X2VuY29kZWRfd2l0aF9lcXVhbF9zaWduXzE=',
-            BASE64_KEY2: 'YmFzZTY0X2VuY29kZWRfd2l0aF9lcXVhbF9zaWduXzI==',
-            BASE64_KEY3: 'YmFzZTY0X2VuY29kZWRfd2l0aF9taWRkbGVfc2lnbl9lcXVhbD1yZXF1aXJlZA==',
-            JUST_KEY_SHOULD_BE_A_KEY: 'zZTY0X2VuY29kZWRf'
-        }
-
-        expect(result).toEqual(expected)
+        expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
+        expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
+        expect(setOutputMock).toHaveBeenCalledWith('time', expect.any(String))
+        expect(setFailedMock).not.toHaveBeenCalled()
     })
 
-    test.each(['123412343', '123=id', '123=id/verId', '123=id/verId/'])(
-        'it should throw error when bad input provided %s',
-        input => {
-            expect(() => parseLockboxVariables([input])).toThrow()
-        }
-    )
+    it('should run with all inputs', async () => {
+        setupMockInputs({ ...defaultValues, ...ycSaJsonCredentials })
+
+        await main.run()
+
+        expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
+        expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
+        expect(setOutputMock).toHaveBeenCalledWith('time', expect.any(String))
+        expect(setFailedMock).not.toHaveBeenCalled()
+    })
+
+    it('should run with async inputs', async () => {
+        setupMockInputs({ ...asyncInputs, ...ycSaJsonCredentials })
+
+        await main.run()
+
+        expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
+        expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
+        expect(setOutputMock).toHaveBeenCalledWith('time', expect.any(String))
+        expect(setFailedMock).not.toHaveBeenCalled()
+        const mocks = __getMocks().FunctionServiceMock
+        expect(mocks.createVersion).toHaveBeenCalledWith(
+            expect.objectContaining({
+                asyncInvocationConfig: expect.objectContaining({
+                    serviceAccountId: 'async-sa-id',
+                    failureTarget: expect.objectContaining({
+                        ymqTarget: expect.objectContaining({
+                            queueArn: 'arn:aws:sqs:us-east-1:123456789012:queue-name',
+                            serviceAccountId: 'failure-sa-id'
+                        })
+                    }),
+                    successTarget: expect.objectContaining({
+                        ymqTarget: expect.objectContaining({
+                            queueArn: 'arn:aws:sqs:us-east-1:123456789012:queue-name',
+                            serviceAccountId: 'success-sa-id'
+                        })
+                    }),
+                    retriesCount: 3
+                })
+            })
+        )
+    })
+
+    it('should create async function with async input only', async () => {
+        setupMockInputs({
+            ...requiredInputs,
+            ...ycSaJsonCredentials,
+            async: 'true',
+            'service-account': 'serviceaccountid'
+        })
+        __setServiceAccountList([
+            ServiceAccount.fromJSON({
+                id: 'serviceaccountid'
+            })
+        ])
+
+        await main.run()
+        expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
+        expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
+        expect(setFailedMock).not.toHaveBeenCalled()
+
+        const mocks = __getMocks().FunctionServiceMock
+        expect(mocks.createVersion).toHaveBeenCalledWith(
+            expect.objectContaining({
+                asyncInvocationConfig: expect.objectContaining({
+                    serviceAccountId: 'serviceaccountid',
+                    failureTarget: expect.objectContaining({
+                        emptyTarget: expect.objectContaining({})
+                    }),
+                    successTarget: expect.objectContaining({
+                        emptyTarget: expect.objectContaining({})
+                    }),
+                    retriesCount: 3
+                })
+            })
+        )
+    })
+
+    it('should skip function creation if it already exists', async () => {
+        setupMockInputs({ ...defaultValues, ...ycSaJsonCredentials })
+        __setFunctionList([
+            Instance.fromJSON({
+                id: 'functionid',
+                name: 'my-function',
+                folder_id: 'folderid',
+                status: 'ACTIVE'
+            })
+        ])
+
+        await main.run()
+
+        expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
+        expect(setOutputMock).toHaveBeenCalledWith('time', expect.any(String))
+        expect(setFailedMock).not.toHaveBeenCalled()
+        expect(__getMocks().FunctionServiceMock.create).not.toHaveBeenCalled()
+    })
+
+    it('should resolve service account id from name', async () => {
+        setupMockInputs({ ...requiredInputs, ...ycSaJsonCredentials, 'service-account-name': 'service-account-name' })
+        __setServiceAccountList([
+            ServiceAccount.fromJSON({
+                id: 'serviceaccountid',
+                name: 'service-account-name'
+            })
+        ])
+
+        await main.run()
+
+        expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
+        expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
+        expect(setOutputMock).toHaveBeenCalledWith('time', expect.any(String))
+        expect(setFailedMock).not.toHaveBeenCalled()
+        expect(__getMocks().FunctionServiceMock.createVersion).toHaveBeenCalledWith(
+            expect.objectContaining({
+                serviceAccountId: 'serviceaccountid'
+            })
+        )
+        expect(__getMocks().ServiceAccountServiceMock.list).toHaveBeenCalledWith(
+            expect.objectContaining({
+                folderId: 'folderid',
+                filter: 'name = "service-account-name"'
+            })
+        )
+    })
 })
+
+function setupMockInputs(inputs: Record<string, string>) {
+    getInputMock.mockImplementation((name: string) => {
+        return inputs[name] || ''
+    })
+    getBooleanInputMock.mockImplementation((name: string) => {
+        return inputs[name] === 'true'
+    })
+}
