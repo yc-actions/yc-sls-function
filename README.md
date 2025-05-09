@@ -38,12 +38,16 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
           ${{ GITHUB_SHA::6 }}
           foo
 ```
-One of `yc-sa-json-credentials`, `yc-iam-token` or `yc-sa-id` should be provided depending on the authentication method you
+
+One of `yc-sa-json-credentials`, `yc-iam-token` or `yc-sa-id` should be provided depending on the authentication method
+you
 want to use. The action will use the first one it finds.
+
 * `yc-sa-json-credentials` should contain JSON with authorized key for Service Account. More info
-in [Yandex Cloud IAM documentation](https://yandex.cloud/en/docs/iam/operations/authentication/manage-authorized-keys#cli_1).
+  in [Yandex Cloud IAM documentation](https://yandex.cloud/en/docs/iam/operations/authentication/manage-authorized-keys#cli_1).
 * `yc-iam-token` should contain IAM token. It can be obtained using `yc iam create-token` command or using
-[yc-actions/yc-iam-token-fed](https://github.com/yc-actions/yc-iam-token-fed)
+  [yc-actions/yc-iam-token-fed](https://github.com/yc-actions/yc-iam-token-fed)
+
 ```yaml
   - name: Get Yandex Cloud IAM token
     id: get-iam-token
@@ -51,8 +55,55 @@ in [Yandex Cloud IAM documentation](https://yandex.cloud/en/docs/iam/operations/
     with:
       yc-sa-id: aje***
 ```
+
 * `yc-sa-id` should contain Service Account ID. It can be obtained using `yc iam service-accounts list` command. It is
-used to exchange GitHub token for IAM token using Workload Identity Federation. More info in [Yandex Cloud IAM documentation](https://yandex.cloud/ru/docs/iam/concepts/workload-identity).
+  used to exchange GitHub token for IAM token using Workload Identity Federation. More info
+  in [Yandex Cloud IAM documentation](https://yandex.cloud/ru/docs/iam/concepts/workload-identity).
+
+### Async invocation
+
+To make the function be able to be invoked asynchronously, you need to set the `async` input parameter to `true`.
+
+```yaml
+    - name: Deploy Function
+      id: sls-func
+      uses: yc-actions/yc-sls-function@v3
+      with:
+        yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+        bucket: ${{ secrets.BUCKET }}
+        folder-id: 'b1g*********'
+        function-name: 'test-function'
+        runtime: 'nodejs16'
+        memory: '256Mb'
+        entrypoint: 'src/main.handler'
+        environment: |
+          DEBUG=True
+          COUNT=1
+        include: |
+          ./src
+          package.json
+        exclude: |
+          **/*.ts
+        tags: |
+          ${{ GITHUB_SHA::6 }}
+          foo
+        async: true
+```
+
+Also, you can provide additional parameters for async invocation:
+
+| **Input Name**          | **Description**                                                                                                   | **Default** |
+|-------------------------|-------------------------------------------------------------------------------------------------------------------|-------------|
+| `async`                 | Enable async invocation.                                                                                          | `'false'`   |
+| `async-sa-id`           | Service account with permission to invoke the function. Defaults to the default service account if not set.       | `''`        |
+| `async-sa-name`         | Service account name with permission to invoke the function. Use either this or `async-sa-id`.                    | `''`        |
+| `async-retries-count`   | Number of retries for async invocations.                                                                          | `'3'`       |
+| `async-success-ymq-arn` | Target for successful invocation results. Queue ARN for sending results to YMQ.                                   | `''`        |
+| `async-success-sa-id`   | Service account ID with write permission on the queue for successful invocation results.                          | `''`        |
+| `async-success-sa-name` | Service account name with write permission on the queue for successful invocation results. Use either this or ID. | `''`        |
+| `async-failure-ymq-arn` | Target for failed invocation results after all retries. Queue ARN for sending results to YMQ.                     | `''`        |
+| `async-failure-sa-id`   | Service account ID with write permission on the queue for failed invocation results.                              | `''`        |
+| `async-failure-sa-name` | Service account name with write permission on the queue for failed invocation results. Use either this or ID.     | `''`        |
 
 See [action.yml](action.yml) for the full documentation for this action's inputs and outputs.
 
