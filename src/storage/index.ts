@@ -3,7 +3,7 @@ import axios from 'axios'
 import { IStorageObject, StorageObject } from './storage-object'
 import { SessionConfig } from '@yandex-cloud/nodejs-sdk/dist/types'
 
-interface StorageService {
+export interface StorageService {
     getObject(bucketName: string, objectName: string): Promise<IStorageObject>
 
     putObject(object: object): Promise<void>

@@ -36,28 +36,9 @@ import { SessionConfig } from '@yandex-cloud/nodejs-sdk/dist/types'
 import path from 'node:path'
 import { parseLogLevel } from './log-level'
 import axios from 'axios'
-
-type ActionInputs = {
-    folderId: string
-    functionName: string
-    runtime: string
-    entrypoint: string
-    memory: number
-    include: string[]
-    excludePattern: string[]
-    sourceRoot: string
-    executionTimeout: number
-    environment: string[]
-    serviceAccount: string
-    bucket: string
-    description: string
-    secrets: string[]
-    networkId: string
-    tags: string[]
-    logsDisabled: boolean
-    logsGroupId: string
-    logLevel: number
-}
+import { ActionInputs } from './actionInputs'
+import { resolveServiceAccountId } from './service-account'
+import { createAsyncInvocationConfig } from './async-invocation'
 
 async function uploadToS3(
     bucket: string,
@@ -125,7 +106,7 @@ async function getOrCreateFunctionId(session: Session, { folderId, functionName 
     return functionId
 }
 
-async function run(): Promise<void> {
+export async function run(): Promise<void> {
     setCommandEcho(true)
 
     try {
@@ -164,6 +145,7 @@ async function run(): Promise<void> {
             executionTimeout: parseInt(getInput('execution-timeout', { required: false }) || '5', 10),
             environment: getMultilineInput('environment', { required: false }),
             serviceAccount: getInput('service-account', { required: false }),
+            serviceAccountName: getInput('service-account-name', { required: false }),
             bucket: getInput('bucket', { required: false }),
             description: getInput('description', { required: false }),
             secrets: getMultilineInput('secrets', { required: false }),
@@ -171,7 +153,17 @@ async function run(): Promise<void> {
             tags: getMultilineInput('tags', { required: false }),
             logsDisabled: getBooleanInput('logs-disabled', { required: false }) || false,
             logsGroupId: getInput('logs-group-id', { required: false }),
-            logLevel: parseLogLevel(getInput('log-level', { required: false, trimWhitespace: true }))
+            logLevel: parseLogLevel(getInput('log-level', { required: false, trimWhitespace: true })),
+            async: getBooleanInput('async', { required: false }),
+            asyncSaId: getInput('async-sa-id', { required: false }),
+            asyncSaName: getInput('async-sa-name', { required: false }),
+            asyncRetriesCount: parseInt(getInput('async-retries-count', { required: false }) || '3', 10),
+            asyncSuccessYmqArn: getInput('async-success-ymq-arn', { required: false }),
+            asyncSuccessSaId: getInput('async-success-sa-id', { required: false }),
+            asyncFailureYmqArn: getInput('async-failure-ymq-arn', { required: false }),
+            asyncFailureSaId: getInput('async-failure-sa-id', { required: false }),
+            asyncSuccessSaName: getInput('async-success-sa-name', { required: false }),
+            asyncFailureSaName: getInput('async-failure-sa-name', { required: false })
         }
 
         info('Function inputs set')
@@ -213,6 +205,13 @@ async function createFunctionVersion(
         info(`Parsed memory: "${inputs.memory}"`)
         info(`Parsed timeout: "${inputs.executionTimeout}"`)
 
+        const serviceAccountId = await resolveServiceAccountId(
+            session,
+            functionId,
+            inputs.serviceAccount,
+            inputs.serviceAccountName
+        )
+
         const request = CreateFunctionVersionRequest.fromJSON({
             functionId,
             runtime: inputs.runtime,
@@ -220,7 +219,7 @@ async function createFunctionVersion(
             resources: {
                 memory: inputs.memory
             },
-            serviceAccountId: inputs.serviceAccount,
+            serviceAccountId,
             description: inputs.description,
             environment: parseEnvironmentVariables(inputs.environment),
             executionTimeout: { seconds: inputs.executionTimeout },
@@ -233,7 +232,8 @@ async function createFunctionVersion(
                 disabled: inputs.logsDisabled,
                 logGroupId: inputs.logsGroupId,
                 minLevel: inputs.logLevel
-            }
+            },
+            asyncInvocationConfig: await createAsyncInvocationConfig(session, inputs)
         })
 
         const functionService = session.client(serviceClients.FunctionServiceClient)
@@ -417,5 +417,3 @@ async function exchangeToken(token: string, saId: string): Promise<string> {
     info(`Token exchanged successfully`)
     return res.data.access_token
 }
-
-run()
