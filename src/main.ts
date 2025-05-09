@@ -207,7 +207,7 @@ async function createFunctionVersion(
 
         const serviceAccountId = await resolveServiceAccountId(
             session,
-            functionId,
+            inputs.folderId,
             inputs.serviceAccount,
             inputs.serviceAccountName
         )

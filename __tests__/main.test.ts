@@ -275,6 +275,12 @@ describe('action', () => {
                 serviceAccountId: 'serviceaccountid'
             })
         )
+        expect(__getMocks().ServiceAccountServiceMock.list).toHaveBeenCalledWith(
+            expect.objectContaining({
+                folderId: 'folderid',
+                filter: 'name = "service-account-name"'
+            })
+        )
     })
 })
 

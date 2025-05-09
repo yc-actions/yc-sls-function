@@ -178,7 +178,8 @@ sdk.__setCreateVersionFail = (value: boolean) => {
 }
 sdk.__getMocks = () => {
     return {
-        FunctionServiceMock
+        FunctionServiceMock,
+        ServiceAccountServiceMock
     }
 }
 
