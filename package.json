@@ -27,7 +27,7 @@
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.11.1",
-    "@actions/github": "^6.0.0",
+    "@actions/github": "^6.0.1",
     "@grpc/grpc-js": "^1.13.3",
     "@yandex-cloud/nodejs-sdk": "2.8.0",
     "archiver": "^7.0.1",
