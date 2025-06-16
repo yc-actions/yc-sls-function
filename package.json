@@ -32,7 +32,7 @@
     "@yandex-cloud/nodejs-sdk": "2.9.0",
     "archiver": "^7.0.1",
     "axios": "1.10.0",
-    "glob": "^11.0.2",
+    "glob": "^11.0.3",
     "long": "5.3.2",
     "minimatch": "10.0.1",
     "minimist": ">=1.2.8",
