@@ -37,7 +37,30 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
         tags: |
           ${{ GITHUB_SHA::6 }}
           foo
+        secrets: |
+          DB_PASSWORD=lockbox-secret-id/latest/password
+          API_KEY=lockbox-secret-id/abcdef123456/api_key
 ```
+
+### Lockbox Secrets: Using the Latest Version
+
+You can specify Lockbox secrets for your function using the `secrets` input. The format is:
+
+```
+<ENV_VAR>=<lockbox-secret-id>/<version-id>/<key>
+```
+
+**New Feature:**
+- You can now use `latest` as the `<version-id>` to automatically use the most recent version of the secret at deploy time.
+- Example:
+  ```
+  secrets: |
+    DB_PASSWORD=lockbox-secret-id/latest/password
+    API_KEY=lockbox-secret-id/abcdef123456/api_key
+  ```
+  In this example, `DB_PASSWORD` will always use the latest version of the secret, while `API_KEY` uses a specific version.
+
+> **Note:** If `latest` is specified and no versions are found for the secret, the deployment will fail with an error.
 
 One of `yc-sa-json-credentials`, `yc-iam-token` or `yc-sa-id` should be provided depending on the authentication method
 you

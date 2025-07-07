@@ -17,6 +17,8 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 
+const { __setLockboxVersions } = require('@yandex-cloud/nodejs-sdk')
+
 declare module '@yandex-cloud/nodejs-sdk' {
     function __setFunctionList(value: Instance[]): void
 
@@ -39,6 +41,7 @@ const runMock = jest.spyOn(main, 'run')
 // Mock the GitHub Actions core library
 let errorMock: jest.SpyInstance
 let getInputMock: jest.SpyInstance
+let getMultipleInputMock: jest.SpyInstance
 let getBooleanInputMock: jest.SpyInstance
 let setFailedMock: jest.SpyInstance
 let setOutputMock: jest.SpyInstance
@@ -119,6 +122,7 @@ describe('action', () => {
 
         errorMock = jest.spyOn(core, 'error').mockImplementation()
         getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
+        getMultipleInputMock = jest.spyOn(core, 'getMultilineInput').mockImplementation()
         getBooleanInputMock = jest.spyOn(core, 'getBooleanInput').mockImplementation()
         setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
         setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
@@ -294,6 +298,38 @@ describe('action', () => {
             })
         )
     })
+
+    it('should resolve lockbox secret versionId "latest" to the actual latest version', async () => {
+        setupMockInputs({
+            ...requiredInputs,
+            ...ycSaJsonCredentials,
+            secrets: 'ENV_VAR_1=secret-id/latest/VAR_1'
+        })
+
+        // Set Lockbox versions using the centralized mock
+        __setLockboxVersions([
+            { id: 'v1', createdAt: new Date('2023-01-01T00:00:00Z') },
+            { id: 'v2', createdAt: new Date('2024-01-01T00:00:00Z') }, // latest
+            { id: 'v0', createdAt: new Date('2022-01-01T00:00:00Z') }
+        ])
+
+        await main.run()
+
+        // Check that the latest versionId was used
+        const mocks = __getMocks()
+        expect(mocks.FunctionServiceMock.createVersion).toHaveBeenCalledWith(
+            expect.objectContaining({
+                secrets: expect.arrayContaining([
+                    expect.objectContaining({
+                        environmentVariable: 'ENV_VAR_1',
+                        id: 'secret-id',
+                        versionId: 'v2', // latest
+                        key: 'VAR_1'
+                    })
+                ])
+            })
+        )
+    })
 })
 
 describe('writeSummary', () => {
@@ -384,5 +420,8 @@ function setupMockInputs(inputs: Record<string, string>) {
     })
     getBooleanInputMock.mockImplementation((name: string) => {
         return inputs[name] === 'true'
+    })
+    getMultipleInputMock.mockImplementation((name: string) => {
+        return inputs[name] ? inputs[name].split('\n') : []
     })
 }
