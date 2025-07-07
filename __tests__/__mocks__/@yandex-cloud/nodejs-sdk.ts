@@ -25,6 +25,7 @@ let serviceAccounts: ServiceAccount[] = [
 ]
 let createFunctionFail = false
 let createVersionFail = false
+let lockboxVersions: any[] = []
 
 type PayloadClass<T> = {
     $type: string
@@ -144,6 +145,10 @@ const ServiceAccountServiceMock = {
     }))
 }
 
+const LockboxSecretServiceMock = {
+    listVersions: jest.fn().mockImplementation(() => ({ versions: lockboxVersions }))
+}
+
 sdk.Session = jest.fn().mockImplementation(() => ({
     client: (service: { serviceName: string }) => {
         if (service.serviceName === 'yandex.cloud.serverless.functions.v1.FunctionService') {
@@ -151,6 +156,9 @@ sdk.Session = jest.fn().mockImplementation(() => ({
         }
         if (service.serviceName === 'yandex.cloud.iam.v1.ServiceAccountService') {
             return ServiceAccountServiceMock
+        }
+        if (service.serviceName === 'yandex.cloud.lockbox.v1.SecretService') {
+            return LockboxSecretServiceMock
         }
     }
 }))
@@ -176,10 +184,14 @@ sdk.__setCreateFunctionFail = (value: boolean) => {
 sdk.__setCreateVersionFail = (value: boolean) => {
     createVersionFail = value
 }
+sdk.__setLockboxVersions = (value: any[]) => {
+    lockboxVersions = value
+}
 sdk.__getMocks = () => {
     return {
         FunctionServiceMock,
-        ServiceAccountServiceMock
+        ServiceAccountServiceMock,
+        LockboxSecretServiceMock
     }
 }
 

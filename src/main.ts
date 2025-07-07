@@ -40,6 +40,10 @@ import axios from 'axios'
 import { ActionInputs } from './actionInputs'
 import { resolveServiceAccountId } from './service-account'
 import { createAsyncInvocationConfig } from './async-invocation'
+import {
+    SecretServiceClient,
+    ListVersionsRequest
+} from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/lockbox/v1/secret_service'
 
 async function uploadToS3(
     bucket: string,
@@ -107,6 +111,32 @@ async function getOrCreateFunctionId(session: Session, { folderId, functionName 
     return functionId
 }
 
+// Helper to resolve 'latest' versionId for Lockbox secrets
+async function resolveLatestLockboxVersions(session: Session, secrets: Secret[]): Promise<Secret[]> {
+    const lockboxClient = session.client(SecretServiceClient)
+    const resolved: Secret[] = []
+    for (const secret of secrets) {
+        if (secret.versionId !== 'latest') {
+            resolved.push(secret)
+            continue
+        }
+        // Fetch all versions for the secret
+        const resp = await lockboxClient.listVersions(ListVersionsRequest.fromPartial({ secretId: secret.id }))
+        if (!resp.versions || resp.versions.length === 0) {
+            throw new Error(`No versions found for Lockbox secret: ${secret.id}`)
+        }
+        // Sort versions by createdAt and take the latest
+        const sorted = resp.versions.slice().sort((a, b) => {
+            const aDate = a.createdAt ?? new Date(0)
+            const bDate = b.createdAt ?? new Date(0)
+            return bDate.getTime() - aDate.getTime()
+        })
+        const latest = sorted[0]
+        resolved.push({ ...secret, versionId: latest.id })
+    }
+    return resolved
+}
+
 async function createFunctionVersion(
     session: Session,
     functionId: string,
@@ -130,6 +160,10 @@ async function createFunctionVersion(
             inputs.serviceAccountName
         )
 
+        // Parse and resolve secrets
+        let secrets = parseLockboxVariables(inputs.secrets)
+        secrets = await resolveLatestLockboxVersions(session, secrets)
+
         const request = CreateFunctionVersionRequest.fromJSON({
             functionId,
             runtime: inputs.runtime,
@@ -141,7 +175,7 @@ async function createFunctionVersion(
             description: inputs.description,
             environment: parseEnvironmentVariables(inputs.environment),
             executionTimeout: { seconds: inputs.executionTimeout },
-            secrets: parseLockboxVariables(inputs.secrets),
+            secrets,
             tag: inputs.tags,
             connectivity: {
                 networkId: inputs.networkId
@@ -426,10 +460,12 @@ export function parseLockboxVariables(secrets: string[]): Secret[] {
     for (const line of secrets) {
         const [environmentVariable, values] = line.split('=')
         const [id, versionId, key] = values.split('/')
-        const secret = { environmentVariable, id, versionId, key } as Secret
+        // Allow 'latest' as a valid versionId for now
         if (!environmentVariable || !id || !key || !versionId) {
             throw new Error(`Broken reference to Lockbox Secret: ${line}`)
         }
+        // Accept 'latest' as versionId, will resolve later
+        const secret = { environmentVariable, id, versionId, key } as Secret
         secretsArr.push(secret)
     }
 
