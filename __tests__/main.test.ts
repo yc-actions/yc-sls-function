@@ -322,7 +322,7 @@ describe('writeSummary', () => {
         }
         delete process.env.GITHUB_STEP_SUMMARY
     })
-    it('writes all fields with function id as markdown link', async () => {
+    it('writes all fields with function id as html link', async () => {
         await main.writeSummary({
             functionName: 'fn',
             functionId: 'id',
@@ -335,7 +335,7 @@ describe('writeSummary', () => {
         expect(addHeadingMock).toHaveBeenCalledWith('Yandex Cloud Function Deployment Summary', 2)
         expect(addListMock).toHaveBeenCalledWith([
             'Function Name: fn',
-            'Function ID: [id](https://console.yandex.cloud/folders/folderid/functions/functions/id/overview)',
+            'Function ID: <a href="https://console.yandex.cloud/folders/folderid/functions/functions/id/overview">id</a>',
             'Version ID: vid',
             'Bucket: b',
             'Bucket Object: obj',
@@ -352,7 +352,7 @@ describe('writeSummary', () => {
         })
         expect(addListMock).toHaveBeenCalledWith([
             'Function Name: fn',
-            'Function ID: [id](https://console.yandex.cloud/folders/folderid/functions/functions/id/overview)',
+            'Function ID: <a href="https://console.yandex.cloud/folders/folderid/functions/functions/id/overview">id</a>',
             '✅ Success'
         ])
         expect(writeMock).toHaveBeenCalled()
@@ -366,7 +366,7 @@ describe('writeSummary', () => {
         })
         expect(addListMock).toHaveBeenCalledWith([
             'Function Name: fn',
-            'Function ID: [id](https://console.yandex.cloud/folders/folderid/functions/functions/id/overview)',
+            'Function ID: <a href="https://console.yandex.cloud/folders/folderid/functions/functions/id/overview">id</a>',
             '❌ Error: fail'
         ])
         expect(writeMock).toHaveBeenCalled()
