@@ -62,6 +62,7 @@ You can specify Lockbox secrets for your function using the `secrets` input. The
 
 > **Note:** If `latest` is specified and no versions are found for the secret, the deployment will fail with an error.
 
+### Authorization
 One of `yc-sa-json-credentials`, `yc-iam-token` or `yc-sa-id` should be provided depending on the authentication method
 you
 want to use. The action will use the first one it finds.
