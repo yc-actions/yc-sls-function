@@ -218,7 +218,7 @@ export async function writeSummary({
     if (functionName) items.push(`Function Name: ${functionName}`)
     if (functionId && folderId) {
         const url = `https://console.yandex.cloud/folders/${folderId}/functions/functions/${functionId}/overview`
-        items.push(`Function ID: [${functionId}](${url})`)
+        items.push(`Function ID: <a href="${url}">${functionId}</a>`)
     }
     if (versionId) items.push(`Version ID: ${versionId}`)
     if (bucket) items.push(`Bucket: ${bucket}`)
