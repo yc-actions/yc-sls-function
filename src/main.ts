@@ -10,7 +10,8 @@ import {
     setCommandEcho,
     setFailed,
     setOutput,
-    startGroup
+    startGroup,
+    summary
 } from '@actions/core'
 import { context } from '@actions/github'
 import archiver from 'archiver'
@@ -106,97 +107,14 @@ async function getOrCreateFunctionId(session: Session, { folderId, functionName 
     return functionId
 }
 
-export async function run(): Promise<void> {
-    setCommandEcho(true)
-
-    try {
-        let sessionConfig: SessionConfig = {}
-        const ycSaJsonCredentials = getInput('yc-sa-json-credentials')
-        const ycIamToken = getInput('yc-iam-token')
-        const ycSaId = getInput('yc-sa-id')
-        if (ycSaJsonCredentials !== '') {
-            const serviceAccountJson = fromServiceAccountJsonFile(JSON.parse(ycSaJsonCredentials))
-            info('Parsed Service account JSON')
-            sessionConfig = { serviceAccountJson }
-        } else if (ycIamToken !== '') {
-            sessionConfig = { iamToken: ycIamToken }
-            info('Using IAM token')
-        } else if (ycSaId !== '') {
-            const ghToken = await getIDToken()
-            if (!ghToken) {
-                throw new Error('No credentials provided')
-            }
-            const saToken = await exchangeToken(ghToken, ycSaId)
-            sessionConfig = { iamToken: saToken }
-        } else {
-            throw new Error('No credentials')
-        }
-        const session = new Session(sessionConfig)
-
-        const inputs: ActionInputs = {
-            folderId: getInput('folder-id', { required: true }),
-            functionName: getInput('function-name', { required: true }),
-            runtime: getInput('runtime', { required: true }),
-            entrypoint: getInput('entrypoint', { required: true }),
-            memory: parseMemory(getInput('memory', { required: false }) || '128Mb'),
-            include: getMultilineInput('include', { required: false }),
-            excludePattern: getMultilineInput('exclude', { required: false }),
-            sourceRoot: getInput('source-root', { required: false }) || '.',
-            executionTimeout: parseInt(getInput('execution-timeout', { required: false }) || '5', 10),
-            environment: getMultilineInput('environment', { required: false }),
-            serviceAccount: getInput('service-account', { required: false }),
-            serviceAccountName: getInput('service-account-name', { required: false }),
-            bucket: getInput('bucket', { required: false }),
-            description: getInput('description', { required: false }),
-            secrets: getMultilineInput('secrets', { required: false }),
-            networkId: getInput('network-id', { required: false }),
-            tags: getMultilineInput('tags', { required: false }),
-            logsDisabled: getBooleanInput('logs-disabled', { required: false }) || false,
-            logsGroupId: getInput('logs-group-id', { required: false }),
-            logLevel: parseLogLevel(getInput('log-level', { required: false, trimWhitespace: true })),
-            async: getBooleanInput('async', { required: false }),
-            asyncSaId: getInput('async-sa-id', { required: false }),
-            asyncSaName: getInput('async-sa-name', { required: false }),
-            asyncRetriesCount: parseInt(getInput('async-retries-count', { required: false }) || '3', 10),
-            asyncSuccessYmqArn: getInput('async-success-ymq-arn', { required: false }),
-            asyncSuccessSaId: getInput('async-success-sa-id', { required: false }),
-            asyncFailureYmqArn: getInput('async-failure-ymq-arn', { required: false }),
-            asyncFailureSaId: getInput('async-failure-sa-id', { required: false }),
-            asyncSuccessSaName: getInput('async-success-sa-name', { required: false }),
-            asyncFailureSaName: getInput('async-failure-sa-name', { required: false })
-        }
-
-        info('Function inputs set')
-
-        const archive = archiver('zip', { zlib: { level: 9 } })
-        const fileContents = await zipSources(inputs, archive)
-
-        info(`Buffer size: ${Buffer.byteLength(fileContents)}b`)
-
-        const functionId = await getOrCreateFunctionId(session, inputs)
-        let bucketObjectName = ''
-        if (inputs.bucket) {
-            bucketObjectName = await uploadToS3(inputs.bucket, functionId, sessionConfig, fileContents)
-        }
-
-        await createFunctionVersion(session, functionId, fileContents, bucketObjectName, inputs)
-
-        setOutput('time', new Date().toTimeString())
-    } catch (err) {
-        if (err instanceof errors.ApiError) {
-            error(`${err.message}\nx-request-id: ${err.requestId}\nx-server-trace-id: ${err.serverTraceId}`)
-        }
-        setFailed(err as Error)
-    }
-}
-
 async function createFunctionVersion(
     session: Session,
     functionId: string,
     fileContents: Buffer,
     bucketObjectName: string,
     inputs: ActionInputs
-): Promise<void> {
+): Promise<string> {
+    // Return versionId
     startGroup('Create function version')
     try {
         info(`Function '${inputs.functionName}' ${functionId}`)
@@ -266,14 +184,142 @@ async function createFunctionVersion(
             throw new Error('Failed to create function version')
         }
         setOutput('version-id', metadata.functionVersionId)
+        return metadata.functionVersionId
     } catch (err) {
         if ('description' in (err as object)) {
             setFailed((err as { description: string }).description)
         } else {
             setFailed(err as Error)
         }
+        throw err
     } finally {
         endGroup()
+    }
+}
+
+export async function writeSummary({
+    functionName,
+    functionId,
+    versionId,
+    bucket,
+    bucketObjectName,
+    errorMessage,
+    folderId
+}: {
+    functionName?: string
+    functionId?: string
+    versionId?: string
+    bucket?: string
+    bucketObjectName?: string
+    errorMessage?: string
+    folderId?: string
+}) {
+    const items: string[] = []
+    if (functionName) items.push(`Function Name: ${functionName}`)
+    if (functionId && folderId) {
+        const url = `https://console.yandex.cloud/folders/${folderId}/functions/functions/${functionId}/overview`
+        items.push(`Function ID: [${functionId}](${url})`)
+    }
+    if (versionId) items.push(`Version ID: ${versionId}`)
+    if (bucket) items.push(`Bucket: ${bucket}`)
+    if (bucketObjectName) items.push(`Bucket Object: ${bucketObjectName}`)
+    if (errorMessage) {
+        items.push(`❌ Error: ${errorMessage}`)
+    } else {
+        items.push('✅ Success')
+    }
+    if (items.length === 0) return
+    await summary.addHeading('Yandex Cloud Function Deployment Summary', 2).addList(items).write()
+}
+
+export async function run(): Promise<void> {
+    setCommandEcho(true)
+    let functionId = ''
+    let versionId = ''
+    let bucketObjectName = ''
+    let errorMessage = ''
+    let inputs: ActionInputs | undefined = undefined
+    try {
+        let sessionConfig: SessionConfig = {}
+        const ycSaJsonCredentials = getInput('yc-sa-json-credentials')
+        const ycIamToken = getInput('yc-iam-token')
+        const ycSaId = getInput('yc-sa-id')
+        if (ycSaJsonCredentials !== '') {
+            const serviceAccountJson = fromServiceAccountJsonFile(JSON.parse(ycSaJsonCredentials))
+            info('Parsed Service account JSON')
+            sessionConfig = { serviceAccountJson }
+        } else if (ycIamToken !== '') {
+            sessionConfig = { iamToken: ycIamToken }
+            info('Using IAM token')
+        } else if (ycSaId !== '') {
+            const ghToken = await getIDToken()
+            if (!ghToken) {
+                throw new Error('No credentials provided')
+            }
+            const saToken = await exchangeToken(ghToken, ycSaId)
+            sessionConfig = { iamToken: saToken }
+        } else {
+            throw new Error('No credentials')
+        }
+        const session = new Session(sessionConfig)
+        inputs = {
+            folderId: getInput('folder-id', { required: true }),
+            functionName: getInput('function-name', { required: true }),
+            runtime: getInput('runtime', { required: true }),
+            entrypoint: getInput('entrypoint', { required: true }),
+            memory: parseMemory(getInput('memory', { required: false }) || '128Mb'),
+            include: getMultilineInput('include', { required: false }),
+            excludePattern: getMultilineInput('exclude', { required: false }),
+            sourceRoot: getInput('source-root', { required: false }) || '.',
+            executionTimeout: parseInt(getInput('execution-timeout', { required: false }) || '5', 10),
+            environment: getMultilineInput('environment', { required: false }),
+            serviceAccount: getInput('service-account', { required: false }),
+            serviceAccountName: getInput('service-account-name', { required: false }),
+            bucket: getInput('bucket', { required: false }),
+            description: getInput('description', { required: false }),
+            secrets: getMultilineInput('secrets', { required: false }),
+            networkId: getInput('network-id', { required: false }),
+            tags: getMultilineInput('tags', { required: false }),
+            logsDisabled: getBooleanInput('logs-disabled', { required: false }) || false,
+            logsGroupId: getInput('logs-group-id', { required: false }),
+            logLevel: parseLogLevel(getInput('log-level', { required: false, trimWhitespace: true })),
+            async: getBooleanInput('async', { required: false }),
+            asyncSaId: getInput('async-sa-id', { required: false }),
+            asyncSaName: getInput('async-sa-name', { required: false }),
+            asyncRetriesCount: parseInt(getInput('async-retries-count', { required: false }) || '3', 10),
+            asyncSuccessYmqArn: getInput('async-success-ymq-arn', { required: false }),
+            asyncSuccessSaId: getInput('async-success-sa-id', { required: false }),
+            asyncFailureYmqArn: getInput('async-failure-ymq-arn', { required: false }),
+            asyncFailureSaId: getInput('async-failure-sa-id', { required: false }),
+            asyncSuccessSaName: getInput('async-success-sa-name', { required: false }),
+            asyncFailureSaName: getInput('async-failure-sa-name', { required: false })
+        }
+        info('Function inputs set')
+        const archive = archiver('zip', { zlib: { level: 9 } })
+        const fileContents = await zipSources(inputs, archive)
+        info(`Buffer size: ${Buffer.byteLength(fileContents)}b`)
+        functionId = await getOrCreateFunctionId(session, inputs)
+        if (inputs.bucket) {
+            bucketObjectName = await uploadToS3(inputs.bucket, functionId, sessionConfig, fileContents)
+        }
+        versionId = await createFunctionVersion(session, functionId, fileContents, bucketObjectName, inputs)
+        setOutput('time', new Date().toTimeString())
+    } catch (err) {
+        errorMessage = err instanceof Error ? err.message : String(err)
+        if (err instanceof errors.ApiError) {
+            error(`${err.message}\nx-request-id: ${err.requestId}\nx-server-trace-id: ${err.serverTraceId}`)
+        }
+        setFailed(err as Error)
+    } finally {
+        await writeSummary({
+            functionName: inputs?.functionName,
+            functionId,
+            versionId,
+            bucket: inputs?.bucket,
+            bucketObjectName,
+            errorMessage,
+            folderId: inputs?.folderId
+        })
     }
 }
 
