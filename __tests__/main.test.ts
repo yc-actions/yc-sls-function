@@ -13,6 +13,9 @@ import { context } from '@actions/github'
 import axios from 'axios'
 import { Instance } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/compute/v1/instance'
 import { ServiceAccount } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/iam/v1/service_account'
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
 
 declare module '@yandex-cloud/nodejs-sdk' {
     function __setFunctionList(value: Instance[]): void
@@ -106,7 +109,12 @@ const ycSaJsonCredentials: Record<string, string> = {
 }
 
 describe('action', () => {
+    let tmpSummaryFile: string
     beforeEach(() => {
+        // Set GITHUB_STEP_SUMMARY to a temp file
+        tmpSummaryFile = path.join(os.tmpdir(), `gh-summary-${Date.now()}`)
+        process.env.GITHUB_STEP_SUMMARY = tmpSummaryFile
+        fs.writeFileSync(tmpSummaryFile, '', { flag: 'w' }) // Ensure file exists and is writable
         jest.clearAllMocks()
 
         errorMock = jest.spyOn(core, 'error').mockImplementation()
@@ -145,6 +153,10 @@ describe('action', () => {
         jest.clearAllMocks()
         __setFunctionList([])
         __setVersionList([])
+        if (tmpSummaryFile && fs.existsSync(tmpSummaryFile)) {
+            fs.unlinkSync(tmpSummaryFile)
+        }
+        delete process.env.GITHUB_STEP_SUMMARY
     })
 
     it('should run with required inputs', async () => {
@@ -281,6 +293,88 @@ describe('action', () => {
                 filter: 'name = "service-account-name"'
             })
         )
+    })
+})
+
+describe('writeSummary', () => {
+    let addHeadingMock: jest.Mock
+    let addListMock: jest.Mock
+    let writeMock: jest.Mock
+    let tmpSummaryFile: string
+    beforeEach(() => {
+        // Set GITHUB_STEP_SUMMARY to a temp file
+        tmpSummaryFile = path.join(os.tmpdir(), `gh-summary-${Date.now()}`)
+        process.env.GITHUB_STEP_SUMMARY = tmpSummaryFile
+        fs.writeFileSync(tmpSummaryFile, '', { flag: 'w' }) // Ensure file exists and is writable
+        addHeadingMock = jest.fn().mockReturnThis()
+        addListMock = jest.fn().mockReturnThis()
+        writeMock = jest.fn().mockResolvedValue(undefined)
+        jest.spyOn(core, 'summary', 'get').mockReturnValue({
+            addHeading: addHeadingMock,
+            addList: addListMock,
+            write: writeMock
+        } as any)
+    })
+    afterEach(() => {
+        jest.restoreAllMocks()
+        if (tmpSummaryFile && fs.existsSync(tmpSummaryFile)) {
+            fs.unlinkSync(tmpSummaryFile)
+        }
+        delete process.env.GITHUB_STEP_SUMMARY
+    })
+    it('writes all fields with function id as markdown link', async () => {
+        await main.writeSummary({
+            functionName: 'fn',
+            functionId: 'id',
+            versionId: 'vid',
+            bucket: 'b',
+            bucketObjectName: 'obj',
+            errorMessage: undefined,
+            folderId: 'folderid'
+        })
+        expect(addHeadingMock).toHaveBeenCalledWith('Yandex Cloud Function Deployment Summary', 2)
+        expect(addListMock).toHaveBeenCalledWith([
+            'Function Name: fn',
+            'Function ID: [id](https://console.yandex.cloud/folders/folderid/functions/functions/id/overview)',
+            'Version ID: vid',
+            'Bucket: b',
+            'Bucket Object: obj',
+            '✅ Success'
+        ])
+        expect(writeMock).toHaveBeenCalled()
+    })
+    it('writes only meaningful fields', async () => {
+        await main.writeSummary({
+            functionName: 'fn',
+            functionId: 'id',
+            folderId: 'folderid',
+            errorMessage: undefined
+        })
+        expect(addListMock).toHaveBeenCalledWith([
+            'Function Name: fn',
+            'Function ID: [id](https://console.yandex.cloud/folders/folderid/functions/functions/id/overview)',
+            '✅ Success'
+        ])
+        expect(writeMock).toHaveBeenCalled()
+    })
+    it('writes error if present', async () => {
+        await main.writeSummary({
+            functionName: 'fn',
+            functionId: 'id',
+            folderId: 'folderid',
+            errorMessage: 'fail'
+        })
+        expect(addListMock).toHaveBeenCalledWith([
+            'Function Name: fn',
+            'Function ID: [id](https://console.yandex.cloud/folders/folderid/functions/functions/id/overview)',
+            '❌ Error: fail'
+        ])
+        expect(writeMock).toHaveBeenCalled()
+    })
+    it('writes only success if no other fields', async () => {
+        await main.writeSummary({})
+        expect(addListMock).toHaveBeenCalledWith(['✅ Success'])
+        expect(writeMock).toHaveBeenCalled()
     })
 })
 
