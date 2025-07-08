@@ -1,14 +1,8 @@
-import { cloudApi } from '@yandex-cloud/nodejs-sdk'
-
-export const {
-    logging: {
-        log_entry: { LogLevel_Level }
-    }
-} = cloudApi
+import { LogLevel_Level } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/logging/v1/log_entry'
 
 const LOG_LEVEL_VALUES = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
 
-export const parseLogLevel = (levelKey: string): cloudApi.logging.log_entry.LogLevel_Level => {
+export const parseLogLevel = (levelKey: string): LogLevel_Level => {
     if (levelKey === '') {
         return LogLevel_Level.LEVEL_UNSPECIFIED
     }

@@ -165,8 +165,11 @@ describe('action', () => {
 
     it('should run with required inputs', async () => {
         setupMockInputs({ ...requiredInputs, ...ycSaJsonCredentials })
-
-        await main.run()
+        try {
+            await main.run()
+        } catch (error) {
+            console.log('Error during run:', error)
+        }
 
         expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
         expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')

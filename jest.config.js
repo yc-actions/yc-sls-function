@@ -4,18 +4,16 @@
  */
 
 module.exports = {
-  moduleFileExtensions: [
-    "js",
-    "ts",
-    "json"
-  ],
-  transform: {
-    "^.+\\.tsx?$": ["ts-jest", {
-      tsconfig: "./__tests__/tsconfig.json"
-    }]
-  },
-  transformIgnorePatterns: [],
-  testEnvironment: "node",
-  testMatch: ["**/__tests__/**/*.test.[jt]s?(x)"],
-  // preset: "ts-jest"
-};
+    moduleFileExtensions: ['js', 'ts', 'json'],
+    transform: {
+        '^.+\\.tsx?$': [
+            'ts-jest',
+            {
+                tsconfig: './__tests__/tsconfig.json'
+            }
+        ]
+    },
+    transformIgnorePatterns: [],
+    testEnvironment: 'node',
+    testMatch: ['**/__tests__/**/*.test.[jt]s?(x)']
+}

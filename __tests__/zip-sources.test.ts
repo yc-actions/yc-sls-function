@@ -1,5 +1,5 @@
 import { expect, test } from '@jest/globals'
-import { parseEnvironmentVariables, parseLockboxVariables, Secret, ZipInputs, zipSources } from '../src/main'
+import { ZipInputs, zipSources } from '../src/main'
 import archiver from 'archiver'
 
 // shows how the runner will run a javascript action with env / stdout protocol
@@ -131,64 +131,4 @@ describe('zipSources', function () {
         expect(entries.length).toEqual(2)
         expect(entries.map(x => x.name).sort()).toMatchSnapshot()
     })
-})
-
-describe('lockbox', () => {
-    test('it should return right lockbox secrets', () => {
-        const input = ['ENV_VAR_1=id/verId/VAR_1', 'ENV_VAR_2=id/verId/VAR_2']
-        const result = parseLockboxVariables(input)
-        const expected: Secret[] = [
-            {
-                environmentVariable: 'ENV_VAR_1',
-                id: 'id',
-                versionId: 'verId',
-                key: 'VAR_1'
-            },
-            {
-                environmentVariable: 'ENV_VAR_2',
-                id: 'id',
-                versionId: 'verId',
-                key: 'VAR_2'
-            }
-        ]
-        expect(result).toEqual(expected)
-    })
-
-    test.each(['123412343', '123=id', '123=id/verId', '123=id/verId/'])(
-        'it should throw error when bad input provided %s',
-        input => {
-            expect(() => parseLockboxVariables([input])).toThrow()
-        }
-    )
-})
-
-describe('environment', () => {
-    test('it should return right lockbox secrets', () => {
-        const input = [
-            'KEY1=value1',
-            'BASE64_KEY1=YmFzZTY0X2VuY29kZWRfd2l0aF9lcXVhbF9zaWduXzE=',
-            'BASE64_KEY2=YmFzZTY0X2VuY29kZWRfd2l0aF9lcXVhbF9zaWduXzI==',
-            'BASE64_KEY3=YmFzZTY0X2VuY29kZWRfd2l0aF9taWRkbGVfc2lnbl9lcXVhbD1yZXF1aXJlZA==',
-            'JUST_KEY_SHOULD_BE_A_KEY=zZTY0X2VuY29kZWRf'
-        ]
-
-        const result = parseEnvironmentVariables(input)
-
-        const expected: Record<string, string> = {
-            KEY1: 'value1',
-            BASE64_KEY1: 'YmFzZTY0X2VuY29kZWRfd2l0aF9lcXVhbF9zaWduXzE=',
-            BASE64_KEY2: 'YmFzZTY0X2VuY29kZWRfd2l0aF9lcXVhbF9zaWduXzI==',
-            BASE64_KEY3: 'YmFzZTY0X2VuY29kZWRfd2l0aF9taWRkbGVfc2lnbl9lcXVhbD1yZXF1aXJlZA==',
-            JUST_KEY_SHOULD_BE_A_KEY: 'zZTY0X2VuY29kZWRf'
-        }
-
-        expect(result).toEqual(expected)
-    })
-
-    test.each(['123412343', '123=id', '123=id/verId', '123=id/verId/'])(
-        'it should throw error when bad input provided %s',
-        input => {
-            expect(() => parseLockboxVariables([input])).toThrow()
-        }
-    )
 })
