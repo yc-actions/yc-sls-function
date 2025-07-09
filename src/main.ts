@@ -204,8 +204,11 @@ async function createFunctionVersion(
         }
         // Create new version
         const operation = await client.createVersion(request)
+        debug(`Operation created: ${operation.id}`)
         const finishedOp = await waitForOperation(operation, session)
+        debug(`Operation finished: ${finishedOp.id}`)
         if (finishedOp.metadata) {
+            info(`Function version created: ${finishedOp.id}`)
             const meta = CreateFunctionVersionMetadata.decode(finishedOp.metadata.value)
             setOutput('version-id', meta.functionVersionId)
             return meta.functionVersionId
