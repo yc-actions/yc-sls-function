@@ -17,7 +17,7 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
 ```yaml
     - name: Deploy Function
       id: sls-func
-      uses: yc-actions/yc-sls-function@v3
+      uses: yc-actions/yc-sls-function@v4
       with:
         yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
         bucket: ${{ secrets.BUCKET }}
@@ -127,7 +127,7 @@ To make the function be able to be invoked asynchronously, you need to set the `
 ```yaml
     - name: Deploy Function
       id: sls-func
-      uses: yc-actions/yc-sls-function@v3
+      uses: yc-actions/yc-sls-function@v4
       with:
         yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
         bucket: ${{ secrets.BUCKET }}
@@ -190,6 +190,8 @@ The service account provided to function via `service-account` parameter must ha
 |-------------------------------|---------------------------------------------------------------------|
 | `lockbox.payloadViewer`       | To access the Lockbox secrets.                                      |
 | `kms.keys.encrypterDecrypter` | To decrypt the Lockbox secrets, if they are encrypted with KMS key. |
+| `storage.viewer`              | To mount a bucket in read-only mode (`:ro` in mounts input).        |
+| `storage.uploader`            | To mount a bucket in read-write mode (default, or no `:ro`).        |
 
 ## License Summary
 
