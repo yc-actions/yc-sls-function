@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals'
-import { ZipInputs, zipSources } from '../src/main'
 import archiver from 'archiver'
+import { ZipInputs, zipSources } from '../src/zip'
 
 // shows how the runner will run a javascript action with env / stdout protocol
 describe('zipSources', function () {

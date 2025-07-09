@@ -62,6 +62,42 @@ You can specify Lockbox secrets for your function using the `secrets` input. The
 
 > **Note:** If `latest` is specified and no versions are found for the secret, the deployment will fail with an error.
 
+### Mounts Input Syntax
+
+Each line in the `mounts` input should be in the form:
+
+```
+<mount-point>:<bucket>[/<prefix>][:ro]
+```
+- `mount-point` (required): Directory name to mount the bucket to (will be available as `/function/storage/<mount-point>`).
+- `bucket` (required): Name of the Object Storage bucket.
+- `prefix` (optional): Prefix within the bucket to mount (leave empty to mount the entire bucket).
+- `ro` (optional): If present, mount is read-only. Otherwise, mount is read-write.
+
+**Examples:**
+```
+data:my-bucket
+images:my-bucket/photos
+logs:my-bucket:ro
+images:my-bucket/photos:ro
+mount:bucket/prefix
+mount:bucket/prefix:ro
+```
+
+#### Example Usage
+```yaml
+- name: Deploy Function with Object Storage Mount
+  uses: yc-actions/yc-sls-function@v4
+  with:
+    mounts: |
+      data:my-bucket
+      images:my-bucket/photos
+      logs:my-bucket:ro
+      images:my-bucket/photos:ro
+      mount:bucket/prefix
+      mount:bucket/prefix:ro
+```
+
 ### Authorization
 One of `yc-sa-json-credentials`, `yc-iam-token` or `yc-sa-id` should be provided depending on the authentication method
 you

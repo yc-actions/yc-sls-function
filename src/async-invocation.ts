@@ -50,6 +50,7 @@ export async function createAsyncInvocationConfig(
     if (!isAsync(actionInputs)) {
         return undefined
     }
+    validateAsync(actionInputs)
 
     let successTarget: AsyncInvocationConfig_ResponseTarget
     let failureTarget: AsyncInvocationConfig_ResponseTarget

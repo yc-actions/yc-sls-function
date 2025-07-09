@@ -28,6 +28,10 @@ inputs:
     description: 'Object Storage bucket name for code'
     default: ''
     required: false
+  mounts:
+    description: 'Object Storage mounts. Multiline. Short syntax: <bucket>:<mount-point>[:<prefix>][:ro]'
+    required: false
+    default: ''
   runtime:
     description: 'Runtime for function.'
     default: ''

@@ -10,39 +10,41 @@ import {
     setCommandEcho,
     setFailed,
     setOutput,
-    startGroup,
-    summary
+    startGroup
 } from '@actions/core'
 import { context } from '@actions/github'
-import archiver from 'archiver'
-import { WritableStreamBuffer } from 'stream-buffers'
-import { minimatch } from 'minimatch'
-import { glob } from 'glob'
 
 import { errors, Session, waitForOperation } from '@yandex-cloud/nodejs-sdk'
 import { functionService } from '@yandex-cloud/nodejs-sdk/serverless-functions-v1'
 import { secretService } from '@yandex-cloud/nodejs-sdk/lockbox-v1'
 import { StorageServiceImpl } from './storage'
 import { StorageObject } from './storage/storage-object'
-import { KB, parseMemory } from './memory'
-import { lstatSync } from 'node:fs'
-import { fromServiceAccountJsonFile } from './service-account-json'
-import path from 'node:path'
-import { parseLogLevel } from './log-level'
-import axios from 'axios'
 import { ActionInputs } from './actionInputs'
 import { resolveServiceAccountId } from './service-account'
 import { createAsyncInvocationConfig } from './async-invocation'
 import { SessionConfig } from '@yandex-cloud/nodejs-sdk/dist/types'
 import { createHash } from 'crypto'
 import {
+    CreateFunctionMetadata,
     CreateFunctionRequest,
     CreateFunctionVersionRequest,
-    ListFunctionsRequest,
-    CreateFunctionMetadata
+    ListFunctionsRequest
 } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function_service'
 import { ListVersionsRequest } from '@yandex-cloud/nodejs-sdk/lockbox-v1/secret_service'
 import { CreateFunctionVersionMetadata } from '@yandex-cloud/nodejs-sdk/serverless-functions-v1/function_service'
+import {
+    parseEnvironmentVariables,
+    parseLockboxVariables,
+    parseLogLevel,
+    parseMemory,
+    parseMounts,
+    parseServiceAccountJsonFile,
+    Secret
+} from './parse'
+import { writeSummary } from './summary'
+import { zipSources } from './zip'
+import { exchangeToken } from './auth'
+import archiver from 'archiver'
 
 async function uploadToS3(
     bucket: string,
@@ -190,6 +192,10 @@ async function createFunctionVersion(
             asyncInvocationConfig: await createAsyncInvocationConfig(session, inputs)
         })
 
+        // Add mounts if provided
+        if (inputs.mounts && inputs.mounts.length > 0) {
+            request.mounts = parseMounts(inputs.mounts)
+        }
         //get from bucket if supplied
         if (inputs.bucket) {
             info(`From bucket: "${inputs.bucket}"`)
@@ -228,41 +234,6 @@ async function createFunctionVersion(
     }
 }
 
-export async function writeSummary({
-    functionName,
-    functionId,
-    versionId,
-    bucket,
-    bucketObjectName,
-    errorMessage,
-    folderId
-}: {
-    functionName?: string
-    functionId?: string
-    versionId?: string
-    bucket?: string
-    bucketObjectName?: string
-    errorMessage?: string
-    folderId?: string
-}) {
-    const items: string[] = []
-    if (functionName) items.push(`Function Name: ${functionName}`)
-    if (functionId && folderId) {
-        const url = `https://console.yandex.cloud/folders/${folderId}/functions/functions/${functionId}/overview`
-        items.push(`Function ID: <a href="${url}">${functionId}</a>`)
-    }
-    if (versionId) items.push(`Version ID: ${versionId}`)
-    if (bucket) items.push(`Bucket: ${bucket}`)
-    if (bucketObjectName) items.push(`Bucket Object: ${bucketObjectName}`)
-    if (errorMessage) {
-        items.push(`❌ Error: ${errorMessage}`)
-    } else {
-        items.push('✅ Success')
-    }
-    if (items.length === 0) return
-    await summary.addHeading('Yandex Cloud Function Deployment Summary', 2).addList(items).write()
-}
-
 export async function run(): Promise<void> {
     setCommandEcho(true)
     let functionId = ''
@@ -276,7 +247,7 @@ export async function run(): Promise<void> {
         const ycIamToken = getInput('yc-iam-token')
         const ycSaId = getInput('yc-sa-id')
         if (ycSaJsonCredentials !== '') {
-            const serviceAccountJson = fromServiceAccountJsonFile(JSON.parse(ycSaJsonCredentials))
+            const serviceAccountJson = parseServiceAccountJsonFile(ycSaJsonCredentials)
             info('Parsed Service account JSON')
             sessionConfig = { serviceAccountJson }
         } else if (ycIamToken !== '') {
@@ -323,7 +294,8 @@ export async function run(): Promise<void> {
             asyncFailureYmqArn: getInput('async-failure-ymq-arn', { required: false }),
             asyncFailureSaId: getInput('async-failure-sa-id', { required: false }),
             asyncSuccessSaName: getInput('async-success-sa-name', { required: false }),
-            asyncFailureSaName: getInput('async-failure-sa-name', { required: false })
+            asyncFailureSaName: getInput('async-failure-sa-name', { required: false }),
+            mounts: getMultilineInput('mounts', { required: false })
         }
         info('Function inputs set')
         const archive = archiver('zip', { zlib: { level: 9 } })
@@ -352,147 +324,4 @@ export async function run(): Promise<void> {
             folderId: inputs?.folderId
         })
     }
-}
-
-export interface ZipInputs {
-    include: string[]
-    excludePattern: string[]
-    sourceRoot: string
-}
-
-export async function zipSources(inputs: ZipInputs, archive: archiver.Archiver): Promise<Buffer> {
-    startGroup('ZipDirectory')
-
-    try {
-        const outputStreamBuffer = new WritableStreamBuffer({
-            initialSize: 1000 * KB, // start at 1000 kilobytes.
-            incrementAmount: 1000 * KB // grow by 1000 kilobytes each time buffer overflows.
-        })
-
-        info('Archive initialize')
-
-        archive.on('entry', e => {
-            info(`add: ${e.name}`)
-        })
-
-        const workspace = process.env['GITHUB_WORKSPACE'] ?? ''
-        archive.pipe(outputStreamBuffer)
-        const patterns = parseIgnoreGlobPatterns(inputs.excludePattern)
-        const root = path.join(workspace, inputs.sourceRoot)
-        const includes = inputs.include.filter(x => x.length > 0)
-        for (const include of includes) {
-            const pathFromSourceRoot = path.join(root, include)
-            const matches = glob.sync(pathFromSourceRoot, { absolute: false })
-            for (const match of matches) {
-                if (lstatSync(match).isDirectory()) {
-                    debug(`match:  dir ${match}`)
-                    archive.directory(pathFromSourceRoot, include, data => {
-                        const res = !patterns.map(p => minimatch(data.name, p)).some(x => x)
-                        return res ? data : false
-                    })
-                } else {
-                    debug(`match: file ${match}`)
-                    archive.file(match, { name: path.relative(root, match) })
-                }
-            }
-        }
-
-        await archive.finalize()
-
-        info('Archive finalized')
-
-        outputStreamBuffer.end()
-        const buffer = outputStreamBuffer.getContents()
-        info('Buffer object created')
-
-        if (!buffer) {
-            throw Error('Failed to initialize Buffer')
-        }
-
-        return buffer
-    } finally {
-        endGroup()
-    }
-}
-
-function parseIgnoreGlobPatterns(patterns: string[]): string[] {
-    const result: string[] = []
-
-    for (const pattern of patterns) {
-        //only not empty patterns
-        if (pattern?.length > 0) {
-            result.push(pattern)
-        }
-    }
-
-    info(`Source ignore pattern: "${JSON.stringify(result)}"`)
-    return result
-}
-
-export function parseEnvironmentVariables(env: string[]): { [s: string]: string } {
-    info(`Environment string: "${env}"`)
-
-    const environment: { [key: string]: string } = {}
-    for (const line of env) {
-        const [key, value] = line.split(/=(.*)/s)
-        environment[key.trim()] = value.trim()
-    }
-
-    info(`EnvObject: "${JSON.stringify(environment)}"`)
-    return environment
-}
-
-export type Secret = {
-    environmentVariable: string
-    id: string
-    versionId: string
-    key: string
-}
-
-// environmentVariable=id/versionId/key
-export function parseLockboxVariables(secrets: string[]): Secret[] {
-    info(`Secrets string: "${secrets}"`)
-    const secretsArr: Secret[] = []
-
-    for (const line of secrets) {
-        const [environmentVariable, values] = line.split('=')
-        const [id, versionId, key] = values.split('/')
-        // Allow 'latest' as a valid versionId for now
-        if (!environmentVariable || !id || !key || !versionId) {
-            throw new Error(`Broken reference to Lockbox Secret: ${line}`)
-        }
-        // Accept 'latest' as versionId, will resolve later
-        const secret = { environmentVariable, id, versionId, key } as Secret
-        secretsArr.push(secret)
-    }
-
-    info(`SecretsObject: "${JSON.stringify(secretsArr)}"`)
-    return secretsArr
-}
-
-async function exchangeToken(token: string, saId: string): Promise<string> {
-    info(`Exchanging token for service account ${saId}`)
-    const res = await axios.post(
-        'https://auth.yandex.cloud/oauth/token',
-        {
-            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-            requested_token_type: 'urn:ietf:params:oauth:token-type:access_token',
-            audience: saId,
-            subject_token: token,
-            subject_token_type: 'urn:ietf:params:oauth:token-type:id_token'
-        },
-        {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        }
-    )
-    if (res.status !== 200) {
-        throw new Error(`Failed to exchange token: ${res.status} ${res.statusText}`)
-    }
-    if (!res.data.access_token) {
-        throw new Error(`Failed to exchange token: ${res.data.error} ${res.data.error_description}`)
-    }
-    info(`Token exchanged successfully`)
-    return res.data.access_token
 }
