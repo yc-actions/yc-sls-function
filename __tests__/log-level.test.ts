@@ -1,10 +1,10 @@
 import { expect, test } from '@jest/globals'
 import { getInput } from '@actions/core'
-import { cloudApi } from '@yandex-cloud/nodejs-sdk'
 import { parseLogLevel } from '../src/log-level'
+import { LogLevel_Level } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/logging/v1/log_entry'
 
 const levelsArray = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
-const LEVELS = cloudApi.logging.log_entry.LogLevel_Level
+const LEVELS = LogLevel_Level
 
 test('should return default value LEVEL_UNSPECIFIED when key is not set', () => {
     expect(parseLogLevel(getInput('log_level', { required: false, trimWhitespace: true }))).toEqual(
@@ -23,7 +23,6 @@ test('should throw an error if value is invalid', () => {
         parseLogLevel('invalidKey')
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
-        // eslint-disable-next-line jest/no-conditional-expect
         expect(e.message).toEqual('Log level has unknown value')
     }
 })

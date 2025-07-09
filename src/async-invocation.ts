@@ -1,10 +1,10 @@
 import { ActionInputs } from './actionInputs'
+import { Session } from '@yandex-cloud/nodejs-sdk'
+import { resolveServiceAccountId } from './service-account'
 import {
     AsyncInvocationConfig,
     AsyncInvocationConfig_ResponseTarget
 } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function'
-import { resolveServiceAccountId } from './service-account'
-import { Session } from '@yandex-cloud/nodejs-sdk'
 
 export function isAsync(actionInputs: ActionInputs): boolean {
     return actionInputs.async

@@ -1,13 +1,6 @@
 import * as core from '@actions/core'
-import {
-    __getMocks,
-    __setCreateFunctionFail,
-    __setCreateVersionFail,
-    __setFunctionList,
-    __setServiceAccountList,
-    __setVersionList
-} from '@yandex-cloud/nodejs-sdk'
-import * as main from '../src/main'
+
+import { run, writeSummary } from '../src/main'
 
 import { context } from '@actions/github'
 import axios from 'axios'
@@ -16,27 +9,18 @@ import { ServiceAccount } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/c
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-
-const { __setLockboxVersions } = require('@yandex-cloud/nodejs-sdk')
-
-declare module '@yandex-cloud/nodejs-sdk' {
-    function __setFunctionList(value: Instance[]): void
-
-    function __setVersionList(value: Instance[]): void
-
-    function __setServiceAccountList(value: ServiceAccount[]): void
-
-    function __setCreateFunctionFail(value: boolean): void
-
-    function __setCreateVersionFail(value: boolean): void
-
-    function __getMocks(): any
-}
+import { __setServiceAccountList, ServiceAccountServiceMock } from './__mocks__/@yandex-cloud/nodejs-sdk/iam-v1'
+import {
+    __setCreateFunctionFail,
+    __setCreateVersionFail,
+    __setFunctionList,
+    __setVersionList,
+    FunctionServiceMock
+} from './__mocks__/@yandex-cloud/nodejs-sdk/serverless-functions-v1'
+import { __setLockboxVersions } from './__mocks__/@yandex-cloud/nodejs-sdk/lockbox-v1'
+import { Version_Status } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/lockbox/v1/secret'
 
 jest.mock('../src/storage')
-
-// Mock the action's main function
-const runMock = jest.spyOn(main, 'run')
 
 // Mock the GitHub Actions core library
 let errorMock: jest.SpyInstance
@@ -166,7 +150,7 @@ describe('action', () => {
     it('should run with required inputs', async () => {
         setupMockInputs({ ...requiredInputs, ...ycSaJsonCredentials })
 
-        await main.run()
+        await run()
 
         expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
         expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
@@ -177,7 +161,7 @@ describe('action', () => {
     it('should run with all inputs', async () => {
         setupMockInputs({ ...defaultValues, ...ycSaJsonCredentials })
 
-        await main.run()
+        await run()
 
         expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
         expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
@@ -188,14 +172,13 @@ describe('action', () => {
     it('should run with async inputs', async () => {
         setupMockInputs({ ...asyncInputs, ...ycSaJsonCredentials })
 
-        await main.run()
+        await run()
 
         expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
         expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
         expect(setOutputMock).toHaveBeenCalledWith('time', expect.any(String))
         expect(setFailedMock).not.toHaveBeenCalled()
-        const mocks = __getMocks().FunctionServiceMock
-        expect(mocks.createVersion).toHaveBeenCalledWith(
+        expect(FunctionServiceMock.createVersion).toHaveBeenCalledWith(
             expect.objectContaining({
                 asyncInvocationConfig: expect.objectContaining({
                     serviceAccountId: 'async-sa-id',
@@ -230,13 +213,12 @@ describe('action', () => {
             })
         ])
 
-        await main.run()
+        await run()
         expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
         expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
         expect(setFailedMock).not.toHaveBeenCalled()
 
-        const mocks = __getMocks().FunctionServiceMock
-        expect(mocks.createVersion).toHaveBeenCalledWith(
+        expect(FunctionServiceMock.createVersion).toHaveBeenCalledWith(
             expect.objectContaining({
                 asyncInvocationConfig: expect.objectContaining({
                     serviceAccountId: 'serviceaccountid',
@@ -263,12 +245,12 @@ describe('action', () => {
             })
         ])
 
-        await main.run()
+        await run()
 
         expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
         expect(setOutputMock).toHaveBeenCalledWith('time', expect.any(String))
         expect(setFailedMock).not.toHaveBeenCalled()
-        expect(__getMocks().FunctionServiceMock.create).not.toHaveBeenCalled()
+        expect(FunctionServiceMock.create).not.toHaveBeenCalled()
     })
 
     it('should resolve service account id from name', async () => {
@@ -280,18 +262,18 @@ describe('action', () => {
             })
         ])
 
-        await main.run()
+        await run()
 
         expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
         expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
         expect(setOutputMock).toHaveBeenCalledWith('time', expect.any(String))
         expect(setFailedMock).not.toHaveBeenCalled()
-        expect(__getMocks().FunctionServiceMock.createVersion).toHaveBeenCalledWith(
+        expect(FunctionServiceMock.createVersion).toHaveBeenCalledWith(
             expect.objectContaining({
                 serviceAccountId: 'serviceaccountid'
             })
         )
-        expect(__getMocks().ServiceAccountServiceMock.list).toHaveBeenCalledWith(
+        expect(ServiceAccountServiceMock.list).toHaveBeenCalledWith(
             expect.objectContaining({
                 folderId: 'folderid',
                 filter: 'name = "service-account-name"'
@@ -308,16 +290,36 @@ describe('action', () => {
 
         // Set Lockbox versions using the centralized mock
         __setLockboxVersions([
-            { id: 'v1', createdAt: new Date('2023-01-01T00:00:00Z') },
-            { id: 'v2', createdAt: new Date('2024-01-01T00:00:00Z') }, // latest
-            { id: 'v0', createdAt: new Date('2022-01-01T00:00:00Z') }
+            {
+                id: 'v1',
+                createdAt: new Date('2023-01-01T00:00:00Z'),
+                secretId: '',
+                description: '',
+                status: Version_Status.STATUS_UNSPECIFIED,
+                payloadEntryKeys: []
+            },
+            {
+                id: 'v2',
+                createdAt: new Date('2024-01-01T00:00:00Z'),
+                secretId: '',
+                description: '',
+                status: Version_Status.ACTIVE,
+                payloadEntryKeys: []
+            }, // latest
+            {
+                id: 'v0',
+                createdAt: new Date('2022-01-01T00:00:00Z'),
+                secretId: '',
+                description: '',
+                status: Version_Status.STATUS_UNSPECIFIED,
+                payloadEntryKeys: []
+            }
         ])
 
-        await main.run()
+        await run()
 
         // Check that the latest versionId was used
-        const mocks = __getMocks()
-        expect(mocks.FunctionServiceMock.createVersion).toHaveBeenCalledWith(
+        expect(FunctionServiceMock.createVersion).toHaveBeenCalledWith(
             expect.objectContaining({
                 secrets: expect.arrayContaining([
                     expect.objectContaining({
@@ -359,7 +361,7 @@ describe('writeSummary', () => {
         delete process.env.GITHUB_STEP_SUMMARY
     })
     it('writes all fields with function id as html link', async () => {
-        await main.writeSummary({
+        await writeSummary({
             functionName: 'fn',
             functionId: 'id',
             versionId: 'vid',
@@ -380,7 +382,7 @@ describe('writeSummary', () => {
         expect(writeMock).toHaveBeenCalled()
     })
     it('writes only meaningful fields', async () => {
-        await main.writeSummary({
+        await writeSummary({
             functionName: 'fn',
             functionId: 'id',
             folderId: 'folderid',
@@ -394,7 +396,7 @@ describe('writeSummary', () => {
         expect(writeMock).toHaveBeenCalled()
     })
     it('writes error if present', async () => {
-        await main.writeSummary({
+        await writeSummary({
             functionName: 'fn',
             functionId: 'id',
             folderId: 'folderid',
@@ -408,7 +410,7 @@ describe('writeSummary', () => {
         expect(writeMock).toHaveBeenCalled()
     })
     it('writes only success if no other fields', async () => {
-        await main.writeSummary({})
+        await writeSummary({})
         expect(addListMock).toHaveBeenCalledWith(['✅ Success'])
         expect(writeMock).toHaveBeenCalled()
     })

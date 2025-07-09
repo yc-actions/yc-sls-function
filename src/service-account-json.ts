@@ -1,5 +1,3 @@
-import { IIAmCredentials } from '@yandex-cloud/nodejs-sdk/dist/types'
-
 export interface ServiceAccountJsonFileContents {
     id: string
     created_at: string
@@ -9,7 +7,13 @@ export interface ServiceAccountJsonFileContents {
     public_key: string
 }
 
-export function fromServiceAccountJsonFile(data: ServiceAccountJsonFileContents): IIAmCredentials {
+export type ServiceAccountJson = {
+    accessKeyId: string
+    privateKey: string
+    serviceAccountId: string
+}
+
+export function fromServiceAccountJsonFile(data: ServiceAccountJsonFileContents): ServiceAccountJson {
     const requiredFields = ['id', 'private_key', 'service_account_id']
     const missingFields: string[] = []
 

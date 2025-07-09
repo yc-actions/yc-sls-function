@@ -19,31 +19,30 @@ import { WritableStreamBuffer } from 'stream-buffers'
 import { minimatch } from 'minimatch'
 import { glob } from 'glob'
 
-import { decodeMessage, errors, serviceClients, Session, waitForOperation } from '@yandex-cloud/nodejs-sdk'
+import { errors, Session, waitForOperation } from '@yandex-cloud/nodejs-sdk'
+import { functionService } from '@yandex-cloud/nodejs-sdk/serverless-functions-v1'
+import { secretService } from '@yandex-cloud/nodejs-sdk/lockbox-v1'
+import { StorageServiceImpl } from './storage'
+import { StorageObject } from './storage/storage-object'
 import { KB, parseMemory } from './memory'
 import { lstatSync } from 'node:fs'
 import { fromServiceAccountJsonFile } from './service-account-json'
-import {
-    CreateFunctionMetadata,
-    CreateFunctionRequest,
-    CreateFunctionVersionMetadata,
-    CreateFunctionVersionRequest,
-    ListFunctionsRequest
-} from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function_service'
-import { Package } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function'
-import { StorageServiceImpl } from './storage'
-import { StorageObject } from './storage/storage-object'
-import { SessionConfig } from '@yandex-cloud/nodejs-sdk/dist/types'
 import path from 'node:path'
 import { parseLogLevel } from './log-level'
 import axios from 'axios'
 import { ActionInputs } from './actionInputs'
 import { resolveServiceAccountId } from './service-account'
 import { createAsyncInvocationConfig } from './async-invocation'
+import { SessionConfig } from '@yandex-cloud/nodejs-sdk/dist/types'
+import { createHash } from 'crypto'
 import {
-    SecretServiceClient,
-    ListVersionsRequest
-} from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/lockbox/v1/secret_service'
+    CreateFunctionRequest,
+    CreateFunctionVersionRequest,
+    ListFunctionsRequest,
+    CreateFunctionMetadata
+} from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function_service'
+import { ListVersionsRequest } from '@yandex-cloud/nodejs-sdk/lockbox-v1/secret_service'
+import { CreateFunctionVersionMetadata } from '@yandex-cloud/nodejs-sdk/serverless-functions-v1/function_service'
 
 async function uploadToS3(
     bucket: string,
@@ -71,9 +70,9 @@ async function uploadToS3(
 
 async function getOrCreateFunctionId(session: Session, { folderId, functionName }: ActionInputs): Promise<string> {
     startGroup('Find function id')
-    const functionService = session.client(serviceClients.FunctionServiceClient)
+    const client = session.client(functionService.FunctionServiceClient)
 
-    const res = await functionService.list(
+    const res = await client.list(
         ListFunctionsRequest.fromPartial({
             folderId,
             filter: `name = '${functionName}'`
@@ -88,7 +87,7 @@ async function getOrCreateFunctionId(session: Session, { folderId, functionName 
         // Otherwise create new a function and return its id.
         const repo = context.repo
 
-        const op = await functionService.create(
+        const op = await client.create(
             CreateFunctionRequest.fromPartial({
                 folderId,
                 name: functionName,
@@ -97,7 +96,8 @@ async function getOrCreateFunctionId(session: Session, { folderId, functionName 
         )
         const finishedOp = await waitForOperation(op, session)
         if (finishedOp.metadata) {
-            functionId = decodeMessage<CreateFunctionMetadata>(finishedOp.metadata).functionId
+            const meta = CreateFunctionMetadata.decode(finishedOp.metadata.value)
+            functionId = meta.functionId
             info(
                 `There was no function named '${functionName}' in the folder. So it was created. Id is '${functionId}'`
             )
@@ -105,6 +105,7 @@ async function getOrCreateFunctionId(session: Session, { folderId, functionName 
             error(`Failed to create function '${functionName}'`)
             throw new Error('Failed to create function')
         }
+        if (!functionId) throw new Error('Function ID not resolved')
     }
     setOutput('function-id', functionId)
     endGroup()
@@ -113,7 +114,7 @@ async function getOrCreateFunctionId(session: Session, { folderId, functionName 
 
 // Helper to resolve 'latest' versionId for Lockbox secrets
 async function resolveLatestLockboxVersions(session: Session, secrets: Secret[]): Promise<Secret[]> {
-    const lockboxClient = session.client(SecretServiceClient)
+    const lockboxClient = session.client(secretService.SecretServiceClient)
     const resolved: Secret[] = []
     for (const secret of secrets) {
         if (secret.versionId !== 'latest') {
@@ -164,6 +165,7 @@ async function createFunctionVersion(
         let secrets = parseLockboxVariables(inputs.secrets)
         secrets = await resolveLatestLockboxVersions(session, secrets)
 
+        const client = session.client(functionService.FunctionServiceClient)
         const request = CreateFunctionVersionRequest.fromJSON({
             functionId,
             runtime: inputs.runtime,
@@ -188,16 +190,11 @@ async function createFunctionVersion(
             asyncInvocationConfig: await createAsyncInvocationConfig(session, inputs)
         })
 
-        const functionService = session.client(serviceClients.FunctionServiceClient)
-
         //get from bucket if supplied
         if (inputs.bucket) {
             info(`From bucket: "${inputs.bucket}"`)
-
-            request.package = Package.fromJSON({
-                bucketName: inputs.bucket,
-                objectName: bucketObjectName
-            })
+            const sha256 = createHash('sha256').update(fileContents).digest('hex')
+            request.package = { bucketName: inputs.bucket, objectName: bucketObjectName, sha256 }
         } else {
             // 3.5 mb
             if (fileContents.length > 3670016) {
@@ -206,19 +203,19 @@ async function createFunctionVersion(
             request.content = fileContents
         }
         // Create new version
-        const operation = await functionService.createVersion(request)
-        await waitForOperation(operation, session)
-
-        info('Operation complete')
-        let metadata
-        if (operation.metadata) {
-            metadata = decodeMessage<CreateFunctionVersionMetadata>(operation.metadata)
+        const operation = await client.createVersion(request)
+        debug(`Operation created: ${operation.id}`)
+        const finishedOp = await waitForOperation(operation, session)
+        debug(`Operation finished: ${finishedOp.id}`)
+        if (finishedOp.metadata) {
+            info(`Function version created: ${finishedOp.id}`)
+            const meta = CreateFunctionVersionMetadata.decode(finishedOp.metadata.value)
+            setOutput('version-id', meta.functionVersionId)
+            return meta.functionVersionId
         } else {
             error(`Failed to create function version`)
             throw new Error('Failed to create function version')
         }
-        setOutput('version-id', metadata.functionVersionId)
-        return metadata.functionVersionId
     } catch (err) {
         if ('description' in (err as object)) {
             setFailed((err as { description: string }).description)

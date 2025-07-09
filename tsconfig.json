@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "rootDir": "./src",
-    "moduleResolution": "NodeNext",
+    "module": "es2022",
+    "rootDir": ".",
+    "moduleResolution": "bundler",
     "baseUrl": "./",
     "sourceMap": true,
     "outDir": "./lib",
@@ -12,11 +12,15 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "newLine": "lf"
+    "newLine": "lf",
+    "isolatedModules": true
   },
   "exclude": [
     "node_modules",
-    "**/*.test.ts",
+    "__tests__",
     "**/__mocks__"
-  ]
+  ],
+    "include": [
+        "src/**/*.ts"
+    ],
 }

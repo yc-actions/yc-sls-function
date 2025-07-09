@@ -1,4 +1,5 @@
-import { serviceClients, Session } from '@yandex-cloud/nodejs-sdk'
+import { Session } from '@yandex-cloud/nodejs-sdk'
+import { serviceAccountService } from '@yandex-cloud/nodejs-sdk/iam-v1'
 import { ListServiceAccountsRequest } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/iam/v1/service_account_service'
 
 export async function resolveServiceAccountId(
@@ -7,7 +8,7 @@ export async function resolveServiceAccountId(
     serviceAccountId: string,
     serviceAccountName: string
 ): Promise<string | undefined> {
-    const client = session.client(serviceClients.ServiceAccountServiceClient)
+    const client = session.client(serviceAccountService.ServiceAccountServiceClient)
     if (serviceAccountId) {
         return serviceAccountId
     }
