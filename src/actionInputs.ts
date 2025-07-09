@@ -19,6 +19,7 @@ export type ActionInputs = {
     logsDisabled: boolean
     logsGroupId: string
     logLevel: number
+    mounts?: string[]
 
     async: boolean
     asyncSaId: string

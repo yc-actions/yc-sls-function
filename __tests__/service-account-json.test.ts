@@ -1,4 +1,4 @@
-import { fromServiceAccountJsonFile, ServiceAccountJsonFileContents } from '../src/service-account-json'
+import { parseServiceAccountJsonFile, ServiceAccountJsonFileContents } from '../src/parse'
 
 describe('fromServiceAccountJsonFile', () => {
     it('should return an object with the same values when all required fields are present', () => {
@@ -11,7 +11,7 @@ describe('fromServiceAccountJsonFile', () => {
             public_key: 'test_public_key'
         }
 
-        const result = fromServiceAccountJsonFile(data)
+        const result = parseServiceAccountJsonFile(JSON.stringify(data))
 
         expect(result).toEqual({
             accessKeyId: 'test_id',
@@ -28,8 +28,7 @@ describe('fromServiceAccountJsonFile', () => {
             public_key: 'test_public_key'
         }
 
-        expect(() => fromServiceAccountJsonFile(data as ServiceAccountJsonFileContents)).toThrow(
-            // eslint-disable-next-line max-len
+        expect(() => parseServiceAccountJsonFile(JSON.stringify(data))).toThrow(
             'Service Account key provided in "yc-sa-json-credentials" is missing required fields: private_key, service_account_id'
         )
     })

@@ -1,10 +1,11 @@
+// eslint-disable-next-line import/no-namespace
 import * as core from '@actions/core'
 
-import { run, writeSummary } from '../src/main'
+import { run } from '../src/main'
 
 import { context } from '@actions/github'
 import axios from 'axios'
-import { Instance } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/compute/v1/instance'
+import { Function } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function'
 import { ServiceAccount } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/iam/v1/service_account'
 import fs from 'fs'
 import os from 'os'
@@ -19,17 +20,21 @@ import {
 } from './__mocks__/@yandex-cloud/nodejs-sdk/serverless-functions-v1'
 import { __setLockboxVersions } from './__mocks__/@yandex-cloud/nodejs-sdk/lockbox-v1'
 import { Version_Status } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/lockbox/v1/secret'
+import { writeSummary } from '../src/summary'
 
 jest.mock('../src/storage')
 
 // Mock the GitHub Actions core library
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let errorMock: jest.SpyInstance
 let getInputMock: jest.SpyInstance
 let getMultipleInputMock: jest.SpyInstance
 let getBooleanInputMock: jest.SpyInstance
 let setFailedMock: jest.SpyInstance
 let setOutputMock: jest.SpyInstance
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let getIdTokenMock: jest.SpyInstance
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let axiosPostMock: jest.SpyInstance
 
 // yandex sdk mock
@@ -237,7 +242,7 @@ describe('action', () => {
     it('should skip function creation if it already exists', async () => {
         setupMockInputs({ ...defaultValues, ...ycSaJsonCredentials })
         __setFunctionList([
-            Instance.fromJSON({
+            Function.fromJSON({
                 id: 'functionid',
                 name: 'my-function',
                 folder_id: 'folderid',
@@ -351,6 +356,7 @@ describe('writeSummary', () => {
             addHeading: addHeadingMock,
             addList: addListMock,
             write: writeMock
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any)
     })
     afterEach(() => {

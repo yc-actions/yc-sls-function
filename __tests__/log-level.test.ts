@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals'
 import { getInput } from '@actions/core'
-import { parseLogLevel } from '../src/log-level'
+import { parseLogLevel } from '../src/parse'
 import { LogLevel_Level } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/logging/v1/log_entry'
 
 const levelsArray = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']

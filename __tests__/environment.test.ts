@@ -1,5 +1,5 @@
 import { expect, test } from '@jest/globals'
-import { parseEnvironmentVariables, parseLockboxVariables } from '../src/main'
+import { parseEnvironmentVariables, parseLockboxVariables } from '../src/parse'
 
 describe('environment', () => {
     test('it should return right lockbox secrets', () => {
