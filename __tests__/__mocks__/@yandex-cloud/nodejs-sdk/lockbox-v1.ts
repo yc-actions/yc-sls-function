@@ -1,5 +1,4 @@
 import { Version as LockboxVersion } from '@yandex-cloud/nodejs-sdk/lockbox-v1/secret'
-import { FunctionServiceMock } from './serverless-functions-v1'
 
 jest.disableAutomock()
 

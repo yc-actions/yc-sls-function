@@ -13,13 +13,13 @@ export { errors } from '@yandex-cloud/nodejs-sdk'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sdk: any = jest.createMockFromModule('@yandex-cloud/nodejs-sdk')
 
-sdk.Session = jest.fn().mockImplementation(() => ({
+export const Session = jest.fn().mockImplementation(() => ({
     client: (service: jest.Constructable) => {
         return new service()
     }
 }))
 
-sdk.waitForOperation = jest.fn().mockImplementation((op: Operation) => op)
+export const waitForOperation = jest.fn().mockImplementation((op: Operation) => op)
 
 sdk.__setFunctionList = __setFunctionList
 sdk.__setVersionList = __setVersionList
@@ -35,4 +35,4 @@ sdk.__getMocks = () => {
     }
 }
 
-export = sdk
+export default sdk

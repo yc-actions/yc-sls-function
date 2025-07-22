@@ -3,7 +3,7 @@
  * https://jestjs.io/docs/configuration
  */
 
-module.exports = {
+export default {
     moduleFileExtensions: ['js', 'ts', 'json'],
     transform: {
         '^.+\\.tsx?$': [
