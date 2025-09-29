@@ -50,7 +50,7 @@
     "@types/stream-buffers": "^3.0.7",
     "@typescript-eslint/eslint-plugin": "^8.44.1",
     "@typescript-eslint/parser": "^8.42.0",
-    "@vercel/ncc": "^0.38.3",
+    "@vercel/ncc": "^0.38.4",
     "dotenv": "^17.2.2",
     "eslint": "^9.36.0",
     "eslint-import-resolver-typescript": "^4.4.4",
