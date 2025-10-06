@@ -48,7 +48,7 @@
     "@types/mustache": "^4.2.6",
     "@types/node": "^24.5.2",
     "@types/stream-buffers": "^3.0.7",
-    "@typescript-eslint/eslint-plugin": "^8.44.1",
+    "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",
     "@vercel/ncc": "^0.38.4",
     "dotenv": "^17.2.2",
