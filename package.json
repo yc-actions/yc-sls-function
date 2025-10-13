@@ -51,7 +51,7 @@
     "@typescript-eslint/eslint-plugin": "^8.46.0",
     "@typescript-eslint/parser": "^8.45.0",
     "@vercel/ncc": "^0.38.4",
-    "dotenv": "^17.2.2",
+    "dotenv": "^17.2.3",
     "eslint": "^9.36.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-github": "^6.0.0",
