@@ -36,7 +36,7 @@
     "long": "5.3.2",
     "minimatch": "10.0.3",
     "minimist": ">=1.2.8",
-    "path-scurry": "^2.0.0",
+    "path-scurry": "^2.0.1",
     "stream-buffers": "^3.0.3"
   },
   "devDependencies": {
