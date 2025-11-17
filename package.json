@@ -28,7 +28,7 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.1",
-    "@grpc/grpc-js": "^1.14.0",
+    "@grpc/grpc-js": "^1.14.1",
     "@yandex-cloud/nodejs-sdk": "^3.0.0-beta.1",
     "archiver": "^7.0.1",
     "axios": "1.13.2",
