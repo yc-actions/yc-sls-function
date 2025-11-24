@@ -61,7 +61,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "globals": "^16.5.0",
     "jest": "^30.0.5",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.1.1",
     "prettier": "3.6.2",
     "ts-jest": "^29.4.5",
     "typescript": "^5.9.3"
