@@ -40,7 +40,7 @@
     "stream-buffers": "^3.0.3"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.0",
     "@stylistic/eslint-plugin-ts": "^4.4.1",
     "@types/archiver": "^7.0.0",
