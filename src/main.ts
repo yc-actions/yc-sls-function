@@ -30,7 +30,7 @@ import {
     CreateFunctionVersionRequest,
     ListFunctionsRequest
 } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function_service'
-import { ListVersionsRequest } from '@yandex-cloud/nodejs-sdk/lockbox-v1/secret_service'
+import { GetSecretRequest } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/lockbox/v1/secret_service'
 import { CreateFunctionVersionMetadata } from '@yandex-cloud/nodejs-sdk/serverless-functions-v1/function_service'
 import {
     parseEnvironmentVariables,
@@ -124,18 +124,13 @@ async function resolveLatestLockboxVersions(session: Session, secrets: Secret[])
             continue
         }
         // Fetch all versions for the secret
-        const resp = await lockboxClient.listVersions(ListVersionsRequest.fromPartial({ secretId: secret.id }))
-        if (!resp.versions || resp.versions.length === 0) {
-            throw new Error(`No versions found for Lockbox secret: ${secret.id}`)
+        const resp = await lockboxClient.get(GetSecretRequest.fromPartial({ secretId: secret.id }))
+        if (!resp.currentVersion) {
+            throw new Error(`No current version found for Lockbox secret: ${secret.id}`)
         }
         // Sort versions by createdAt and take the latest
-        const sorted = resp.versions.slice().sort((a, b) => {
-            const aDate = a.createdAt ?? new Date(0)
-            const bDate = b.createdAt ?? new Date(0)
-            return bDate.getTime() - aDate.getTime()
-        })
-        const latest = sorted[0]
-        resolved.push({ ...secret, versionId: latest.id })
+
+        resolved.push({ ...secret, versionId: resp.currentVersion.id })
     }
     return resolved
 }

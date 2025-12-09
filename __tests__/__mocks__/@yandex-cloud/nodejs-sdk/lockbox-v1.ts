@@ -4,7 +4,15 @@ jest.disableAutomock()
 
 let lockboxVersions: LockboxVersion[] = []
 export const LockboxSecretServiceMock = {
-    listVersions: jest.fn().mockImplementation(() => ({ versions: lockboxVersions }))
+    get: jest.fn().mockImplementation(() => {
+        // Find the latest version based on createdAt timestamp
+        const sortedVersions = [...lockboxVersions].sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime())
+        const currentVersion = sortedVersions[0]
+
+        return {
+            currentVersion: currentVersion || undefined
+        }
+    })
 }
 
 export function __setLockboxVersions(value: LockboxVersion[]) {
