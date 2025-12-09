@@ -31,7 +31,7 @@ This ADR outlines the approach for integrating Lockbox secrets into the `yc-sls-
 
 Each line in the `secrets` input must follow this format:
 
-```
+```txt
 <environment-variable>=<secret-id>/<version-id>/<key>
 ```
 
@@ -42,7 +42,7 @@ Each line in the `secrets` input must follow this format:
 
 ### Examples
 
-```
+```txt
 # Using a specific version ID
 API_KEY=e6q8f2j8b3j9b3j9b3j9/e6q9f2j8b3j9b3j9b3j9/api-key
 

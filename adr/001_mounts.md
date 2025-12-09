@@ -30,7 +30,7 @@ Yandex Cloud Serverless Functions recently introduced support for mounting Objec
 
 Each line in the `mounts` input should be in the form:
 
-```
+```txt
 <mount-point>:<bucket>[/<prefix>][:ro]
 ```
 
@@ -41,7 +41,7 @@ Each line in the `mounts` input should be in the form:
 
 **Examples:**
 
-```
+```txt
 data:my-bucket
 images:my-bucket/photos
 logs:my-bucket:ro
@@ -99,6 +99,3 @@ mount:bucket/prefix:ro
 
 - Should we support both short and long syntax, or only short syntax?
 - How to handle errors if the region/runtime does not support mounts?
-
----
-*Last updated: 2025-07-09*
