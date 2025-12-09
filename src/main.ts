@@ -19,7 +19,7 @@ import { functionService } from '@yandex-cloud/nodejs-sdk/serverless-functions-v
 import { secretService } from '@yandex-cloud/nodejs-sdk/lockbox-v1'
 import { StorageServiceImpl } from './storage'
 import { StorageObject } from './storage/storage-object'
-import { ActionInputs } from './actionInputs'
+import { ActionInputs } from './action-inputs'
 import { resolveServiceAccountId } from './service-account'
 import { createAsyncInvocationConfig } from './async-invocation'
 import { SessionConfig } from '@yandex-cloud/nodejs-sdk/dist/types'

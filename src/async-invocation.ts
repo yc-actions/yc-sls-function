@@ -1,4 +1,4 @@
-import { ActionInputs } from './actionInputs'
+import { ActionInputs } from './action-inputs'
 import { Session } from '@yandex-cloud/nodejs-sdk'
 import { resolveServiceAccountId } from './service-account'
 import {
