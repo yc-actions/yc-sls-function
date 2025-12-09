@@ -57,7 +57,7 @@ DB_PASSWORD=e6q8f2j8b3j9b3j9b3j9/latest/db-password
     - Update the `ActionInputs` type in `src/actionInputs.ts` to include `secrets: string[]`.
 
 2. **Implement Parser**:
-    - Create `parseLockboxVariables` in `src/parse/lockboxVariables.ts`.
+    - Create `parseLockboxVariables` in `src/parse/lockbox-variables.ts`.
     - This function will take an array of strings (from the input) and return an array of structured `Secret` objects (`{ environmentVariable, id, versionId, key }`).
     - It must include validation to ensure each line is correctly formatted.
 

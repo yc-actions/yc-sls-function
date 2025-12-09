@@ -1,3 +1,14 @@
+/**
+ * Async invocation configuration validation and creation.
+ *
+ * Handles validation of interdependent async configuration inputs:
+ * - YMQ queue ARNs require corresponding service accounts
+ * - Service account can be specified by ID or name (but not both)
+ * - Falls back to main function service account if async SA not provided
+ *
+ * @module
+ */
+
 import { ActionInputs } from './action-inputs'
 import { Session } from '@yandex-cloud/nodejs-sdk'
 import { resolveServiceAccountId } from './service-account'
@@ -6,10 +17,31 @@ import {
     AsyncInvocationConfig_ResponseTarget
 } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function'
 
+/**
+ * Checks if async invocation is enabled.
+ *
+ * @param actionInputs - Action configuration
+ * @returns true if async flag is set
+ */
 export function isAsync(actionInputs: ActionInputs): boolean {
     return actionInputs.async
 }
 
+/**
+ * Validates async invocation configuration inputs.
+ *
+ * Enforces validation rules:
+ * 1. If `asyncSuccessYmqArn` is set, exactly one of `asyncSuccessSaId` or `asyncSuccessSaName` must be provided
+ * 2. If `asyncFailureYmqArn` is set, exactly one of `asyncFailureSaId` or `asyncFailureSaName` must be provided
+ *
+ * @param actionInputs - Action configuration to validate
+ * @returns true if validation passes
+ * @throws {Error} If validation rules are violated
+ *
+ * @example
+ * // Valid: asyncSuccessYmqArn with asyncSuccessSaId
+ * // Invalid: asyncSuccessYmqArn with both asyncSuccessSaId and asyncSuccessSaName
+ */
 export function validateAsync(actionInputs: ActionInputs): boolean {
     if (!isAsync(actionInputs)) {
         return true
@@ -43,6 +75,21 @@ export function validateAsync(actionInputs: ActionInputs): boolean {
     return true
 }
 
+/**
+ * Creates async invocation configuration for function version.
+ *
+ * Resolves service accounts by name if needed and constructs configuration
+ * with success/failure targets. Falls back to main function service account
+ * if async-specific service account not provided.
+ *
+ * @param session - Authenticated Yandex Cloud SDK session
+ * @param actionInputs - Action configuration
+ * @returns Async invocation config or undefined if async disabled
+ * @throws {Error} If validation fails or service account resolution fails
+ *
+ * @remarks
+ * Empty targets are used when YMQ ARN is not provided.
+ */
 export async function createAsyncInvocationConfig(
     session: Session,
     actionInputs: ActionInputs
@@ -101,12 +148,14 @@ export async function createAsyncInvocationConfig(
         })
     }
 
+    // Resolve service account for async invocations
     let serviceAccountId = await resolveServiceAccountId(
         session,
         actionInputs.folderId,
         actionInputs.asyncSaId,
         actionInputs.asyncSaName
     )
+    // Fallback to main function service account if async SA not provided
     if (serviceAccountId === undefined) {
         serviceAccountId = await resolveServiceAccountId(
             session,

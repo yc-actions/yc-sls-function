@@ -1,3 +1,11 @@
+/**
+ * Parse utilities for action inputs.
+ *
+ * Centralizes exports for all parse modules.
+ *
+ * @module
+ */
+
 export { parseMounts } from './mounts'
 export { parseIgnoreGlobPatterns } from './glob-patterns'
 export { parseEnvironmentVariables } from './environment-variables'

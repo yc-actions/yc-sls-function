@@ -1,3 +1,11 @@
+/**
+ * Source code archiving utilities.
+ *
+ * Creates zip archives from source files using glob patterns and exclusion rules.
+ *
+ * @module
+ */
+
 import archiver from 'archiver'
 import { debug, endGroup, info, startGroup } from '@actions/core'
 import { WritableStreamBuffer } from 'stream-buffers'
@@ -7,12 +15,46 @@ import { glob } from 'glob'
 import { lstatSync } from 'node:fs'
 import { minimatch } from 'minimatch'
 
+/**
+ * Configuration for source code archiving.
+ */
 export interface ZipInputs {
+    /** Glob patterns for files to include */
     include: string[]
+
+    /** Glob patterns to exclude (e.g., 'node_modules/**', '*.test.ts') */
     excludePattern: string[]
+
+    /** Root directory for source resolution (relative to GITHUB_WORKSPACE) */
     sourceRoot: string
 }
 
+/**
+ * Creates zip archive of source files for function deployment.
+ *
+ * Process:
+ * 1. Resolves include patterns to files/directories
+ * 2. Applies exclusion patterns to filter files
+ * 3. Creates zip archive in memory buffer
+ * 4. Logs each added file for debugging
+ *
+ * @param inputs - Zip configuration with include/exclude patterns
+ * @param archive - archiver instance (configured externally)
+ * @returns Buffer containing zip archive
+ * @throws {Error} If archive creation fails or buffer initialization fails
+ *
+ * @example
+ * const archive = archiver('zip', { zlib: { level: 9 } })
+ * const buffer = await zipSources({
+ *   include: ['**\/*.js', '**\/*.json'],
+ *   excludePattern: ['node_modules/**', '*.test.js'],
+ *   sourceRoot: 'src'
+ * }, archive)
+ *
+ * @remarks
+ * Initial buffer size: 1MB, grows by 1MB increments.
+ * Archives relative paths from sourceRoot.
+ */
 export async function zipSources(inputs: ZipInputs, archive: archiver.Archiver): Promise<Buffer> {
     startGroup('ZipDirectory')
 
