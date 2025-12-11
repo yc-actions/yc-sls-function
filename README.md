@@ -1,8 +1,8 @@
-## GitHub Action to deploy Serverless Function to Yandex Cloud
+# GitHub Action to deploy Serverless Function to Yandex Cloud
 
 The action finds or creates Serverless Function in the given folder in Yandex Cloud and deploys new version.
 
-**Table of Contents**
+## Table of Contents
 
 <!-- toc -->
 
@@ -46,18 +46,21 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
 
 You can specify Lockbox secrets for your function using the `secrets` input. The format is:
 
-```
+```txt
 <ENV_VAR>=<lockbox-secret-id>/<version-id>/<key>
 ```
 
 **New Feature:**
+
 - You can now use `latest` as the `<version-id>` to automatically use the most recent version of the secret at deploy time.
 - Example:
-  ```
+
+  ```yaml
   secrets: |
     DB_PASSWORD=lockbox-secret-id/latest/password
     API_KEY=lockbox-secret-id/abcdef123456/api_key
   ```
+
   In this example, `DB_PASSWORD` will always use the latest version of the secret, while `API_KEY` uses a specific version.
 
 > **Note:** If `latest` is specified and no versions are found for the secret, the deployment will fail with an error.
@@ -66,16 +69,18 @@ You can specify Lockbox secrets for your function using the `secrets` input. The
 
 Each line in the `mounts` input should be in the form:
 
-```
+```txt
 <mount-point>:<bucket>[/<prefix>][:ro]
 ```
+
 - `mount-point` (required): Directory name to mount the bucket to (will be available as `/function/storage/<mount-point>`).
 - `bucket` (required): Name of the Object Storage bucket.
 - `prefix` (optional): Prefix within the bucket to mount (leave empty to mount the entire bucket).
 - `ro` (optional): If present, mount is read-only. Otherwise, mount is read-write.
 
 **Examples:**
-```
+
+```txt
 data:my-bucket
 images:my-bucket/photos
 logs:my-bucket:ro
@@ -85,6 +90,7 @@ mount:bucket/prefix:ro
 ```
 
 #### Example Usage
+
 ```yaml
 - name: Deploy Function with Object Storage Mount
   uses: yc-actions/yc-sls-function@v4
@@ -99,13 +105,14 @@ mount:bucket/prefix:ro
 ```
 
 ### Authorization
+
 One of `yc-sa-json-credentials`, `yc-iam-token` or `yc-sa-id` should be provided depending on the authentication method
 you
 want to use. The action will use the first one it finds.
 
-* `yc-sa-json-credentials` should contain JSON with authorized key for Service Account. More info
+- `yc-sa-json-credentials` should contain JSON with authorized key for Service Account. More info
   in [Yandex Cloud IAM documentation](https://yandex.cloud/en/docs/iam/operations/authentication/manage-authorized-keys#cli_1).
-* `yc-iam-token` should contain IAM token. It can be obtained using `yc iam create-token` command or using
+- `yc-iam-token` should contain IAM token. It can be obtained using `yc iam create-token` command or using
   [yc-actions/yc-iam-token-fed](https://github.com/yc-actions/yc-iam-token-fed)
 
 ```yaml
@@ -116,7 +123,7 @@ want to use. The action will use the first one it finds.
       yc-sa-id: aje***
 ```
 
-* `yc-sa-id` should contain Service Account ID. It can be obtained using `yc iam service-accounts list` command. It is
+- `yc-sa-id` should contain Service Account ID. It can be obtained using `yc iam service-accounts list` command. It is
   used to exchange GitHub token for IAM token using Workload Identity Federation. More info
   in [Yandex Cloud IAM documentation](https://yandex.cloud/ru/docs/iam/concepts/workload-identity).
 
@@ -188,7 +195,8 @@ The service account provided to function via `service-account` parameter must ha
 
 | Required Role                 | Required For                                                        |
 |-------------------------------|---------------------------------------------------------------------|
-| `lockbox.payloadViewer`       | To access the Lockbox secrets.                                      |
+| `lockbox.payloadViewer`       | To access Lockbox secrets by ID (basic access).                     |
+| `lockbox.viewer`              | To access Lockbox secrets by name (includes list permissions). Only required if you reference secrets by name instead of ID. |
 | `kms.keys.encrypterDecrypter` | To decrypt the Lockbox secrets, if they are encrypted with KMS key. |
 | `storage.viewer`              | To mount a bucket in read-only mode (`:ro` in mounts input).        |
 | `storage.uploader`            | To mount a bucket in read-write mode (default, or no `:ro`).        |

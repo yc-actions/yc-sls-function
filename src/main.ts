@@ -40,7 +40,12 @@ import {
     CreateFunctionVersionRequest,
     ListFunctionsRequest
 } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function_service'
-import { GetSecretRequest } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/lockbox/v1/secret_service'
+import {
+    ListSecretsRequest,
+    ListSecretsResponse
+} from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/lockbox/v1/secret_service'
+import { Secret as LockboxSecret } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/lockbox/v1/secret'
+import { PromisePool } from '@supercharge/promise-pool'
 import { CreateFunctionVersionMetadata } from '@yandex-cloud/nodejs-sdk/serverless-functions-v1/function_service'
 import {
     parseEnvironmentVariables,
@@ -148,35 +153,162 @@ async function getOrCreateFunctionId(session: Session, { folderId, functionName 
 }
 
 /**
- * Resolves 'latest' versionId to actual version ID for Lockbox secrets.
- *
- * Fetches current version from Lockbox API when versionId is 'latest'.
- * Otherwise returns secret unchanged.
+ * Result type for secret resolution operations
+ */
+type ResolutionResult =
+    | { status: 'success'; secret: Secret }
+    | { status: 'fallback'; original: Secret }
+    | { status: 'error'; error: Error }
+
+/**
+ * Attempts to resolve secrets by their ID using the Lockbox API.
  *
  * @param session - Authenticated Yandex Cloud SDK session
+ * @param secrets - Array of secrets to resolve
+ * @returns Array of resolution results indicating success, fallback needed, or error
+ */
+const resolveSecretsById = async (session: Session, secrets: Secret[]): Promise<ResolutionResult[]> => {
+    const client = session.client(secretService.SecretServiceClient)
+    const { results } = await PromisePool.for(secrets)
+        .withConcurrency(5)
+        .useCorrespondingResults()
+        .process(async (secret): Promise<ResolutionResult> => {
+            let lockboxSecret: LockboxSecret
+            try {
+                lockboxSecret = await client.get({ secretId: secret.id })
+            } catch {
+                return { status: 'fallback', original: secret }
+            }
+
+            if (!lockboxSecret.currentVersion) {
+                return {
+                    status: 'error',
+                    error: new Error(`Secret ${secret.id} has no current version`)
+                }
+            }
+            return {
+                status: 'success',
+                secret: {
+                    ...secret,
+                    versionId: lockboxSecret.currentVersion.id
+                }
+            }
+        })
+    return results.filter((r): r is ResolutionResult => typeof r !== 'symbol')
+}
+
+/**
+ * Lists all secrets in a folder and returns them as a map keyed by secret name.
+ *
+ * @param session - Authenticated Yandex Cloud SDK session
+ * @param folderId - Yandex Cloud folder ID
+ * @returns Map of secret names to secret metadata
+ */
+const findSecretsInFolder = async (session: Session, folderId: string): Promise<Map<string, LockboxSecret>> => {
+    const client = session.client(secretService.SecretServiceClient)
+    const folderSecretsMap = new Map<string, LockboxSecret>()
+    let pageToken: string | undefined = undefined
+
+    do {
+        const resp: ListSecretsResponse = await client.list(
+            ListSecretsRequest.fromPartial({
+                folderId,
+                pageSize: 100,
+                pageToken: pageToken || ''
+            })
+        )
+        if (resp.secrets) {
+            for (const secret of resp.secrets) {
+                folderSecretsMap.set(secret.name, secret)
+            }
+        }
+        pageToken = resp.nextPageToken
+    } while (pageToken)
+
+    return folderSecretsMap
+}
+
+/**
+ * Resolves 'latest' versionId to actual version ID for Lockbox secrets.
+ *
+ * Uses a two-stage resolution approach:
+ * 1. First attempts to resolve secrets by ID
+ * 2. If ID lookup fails, lists all secrets in folder and matches by name
+ *
+ * @param session - Authenticated Yandex Cloud SDK session
+ * @param folderId - Yandex Cloud folder ID containing the secrets
  * @param secrets - Array of secrets that may contain 'latest' versionId
  * @returns Secrets with resolved version IDs
- * @throws {Error} If secret has no current version
+ * @throws {Error} If secret resolution fails or secret has no current version
  *
  * @see ADR 002 for rationale on 'latest' version resolution
  */
-async function resolveLatestLockboxVersions(session: Session, secrets: Secret[]): Promise<Secret[]> {
-    const lockboxClient = session.client(secretService.SecretServiceClient)
-    const resolved: Secret[] = []
-    for (const secret of secrets) {
-        if (secret.versionId !== 'latest') {
-            resolved.push(secret)
-            continue
-        }
-        // Fetch secret metadata to get current version ID
-        const resp = await lockboxClient.get(GetSecretRequest.fromPartial({ secretId: secret.id }))
-        if (!resp.currentVersion) {
-            throw new Error(`No current version found for Lockbox secret: ${secret.id}`)
-        }
-        // Replace 'latest' with actual version ID for stable deployments
-        resolved.push({ ...secret, versionId: resp.currentVersion.id })
+export async function resolveLatestLockboxVersions(
+    session: Session,
+    folderId: string,
+    secrets: Secret[]
+): Promise<Secret[]> {
+    const secretsWithLatest = secrets.filter(s => s.versionId === 'latest')
+    if (secretsWithLatest.length === 0) {
+        return secrets
     }
-    return resolved
+
+    const results = await resolveSecretsById(session, secretsWithLatest)
+    const fallbackIndices = results.map((r, i) => (r.status === 'fallback' ? i : -1)).filter(i => i !== -1)
+
+    if (fallbackIndices.length > 0) {
+        info(`Failed to resolve ${fallbackIndices.length} secrets by ID. Trying to find by name in folder ${folderId}`)
+
+        const folderSecretsMap = await findSecretsInFolder(session, folderId)
+
+        for (const index of fallbackIndices) {
+            const result = results[index]
+            if (result.status !== 'fallback') continue
+
+            const originalSecret = result.original
+            const match = folderSecretsMap.get(originalSecret.id)
+
+            if (match) {
+                info(`Resolved secret "${originalSecret.id}" to ID "${match.id}"`)
+                if (!match.currentVersion) {
+                    results[index] = {
+                        status: 'error',
+                        error: new Error(`Secret ${originalSecret.id} (found as ${match.id}) has no current version`)
+                    }
+                } else {
+                    results[index] = {
+                        status: 'success',
+                        secret: {
+                            ...originalSecret,
+                            id: match.id,
+                            versionId: match.currentVersion.id
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    const resolutionErrors: Error[] = []
+    const resolvedMap = new Map<Secret, Secret>()
+
+    for (const [index, secret] of secretsWithLatest.entries()) {
+        const result = results[index]
+        if (result.status === 'success') {
+            resolvedMap.set(secret, result.secret)
+        } else if (result.status === 'error') {
+            resolutionErrors.push(result.error)
+        } else if (result.status === 'fallback') {
+            resolutionErrors.push(new Error(`Failed to resolve secret: ${secret.id}`))
+        }
+    }
+
+    if (resolutionErrors.length > 0) {
+        const errorMessages = resolutionErrors.map(e => e.message).join(', ')
+        throw new Error(`Failed to resolve latest versions for secrets: ${errorMessages}`)
+    }
+
+    return secrets.map(s => resolvedMap.get(s) || s)
 }
 
 /**
@@ -225,7 +357,7 @@ async function createFunctionVersion(
 
         // Parse and resolve secrets
         let secrets = parseLockboxVariables(inputs.secrets)
-        secrets = await resolveLatestLockboxVersions(session, secrets)
+        secrets = await resolveLatestLockboxVersions(session, inputs.folderId, secrets)
 
         const client = session.client(functionService.FunctionServiceClient)
         const request = CreateFunctionVersionRequest.fromJSON({
