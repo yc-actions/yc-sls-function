@@ -26,7 +26,7 @@
   "author": "Nikolay Matrosov",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^2.0.2",
+    "@actions/core": "^3.0.0",
     "@actions/github": "^7.0.0",
     "@grpc/grpc-js": "^1.14.3",
     "@yandex-cloud/nodejs-sdk": "^3.0.0-beta.1",
