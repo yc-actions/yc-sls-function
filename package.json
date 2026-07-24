@@ -31,10 +31,10 @@
     "@grpc/grpc-js": "^1.14.3",
     "@yandex-cloud/nodejs-sdk": "^3.0.0-beta.1",
     "archiver": "^7.0.1",
-    "axios": "1.16.1",
+    "axios": "^1.18.1",
     "glob": "^13.0.6",
     "long": "5.3.2",
-    "minimatch": "10.1.1",
+    "minimatch": "^10.2.5",
     "minimist": ">=1.2.8",
     "path-scurry": "^2.0.2",
     "stream-buffers": "^3.0.3"
@@ -65,5 +65,8 @@
     "prettier": "3.7.4",
     "ts-jest": "^29.4.9",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "undici": "^6.28.0"
   }
 }
