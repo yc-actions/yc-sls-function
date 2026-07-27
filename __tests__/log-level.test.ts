@@ -19,11 +19,5 @@ test.each(levelsArray)('should return correct enum for LogLevel = %s', (level: s
 })
 
 test('should throw an error if value is invalid', () => {
-    try {
-        parseLogLevel('invalidKey')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (e: any) {
-        // eslint-disable-next-line jest/no-conditional-expect -- plugin:jest/recommended is new in this task
-        expect(e.message).toEqual('Log level has unknown value')
-    }
+    expect(() => parseLogLevel('invalidKey')).toThrow('Log level has unknown value')
 })

@@ -17,18 +17,19 @@ const compat = new FlatCompat({
 export default [
     {
         // SCAFFOLDING - Task 2 only, mirrors jest.config.js's testPathIgnorePatterns.
-        // __tests__/foo and __tests__/src are zip test data that Task 3 moves to
-        // __fixtures__/workspace/; __tests__/main.test.ts and
-        // __tests__/characterization.test.ts still use the pre-ESM mock-import
-        // style (flagged by the newly-enabled plugin:jest/recommended) and an
-        // eslint-disable comment for a rule that no longer exists (see Step 3)
-        // until Task 4 rewrites them.
+        // '__tests__/src/func.js' is zip test data with no tsconfig coverage;
+        // Task 3 moves it to '__fixtures__/workspace/src/func.js' and must update
+        // this entry to the new path (or otherwise cover it) or lint breaks again.
+        // '__tests__/main.test.ts' and '__tests__/characterization.test.ts' fail
+        // lint today only because of the pre-ESM manual __mocks__ imports
+        // (jest/no-mocks-import) and the stale import/no-namespace disable comment
+        // (see Step 3); Task 4 rewrites both files and must remove these two
+        // entries once they lint clean on their own.
         ignores: [
             '**/coverage',
             '**/dist',
             '**/node_modules',
-            '__tests__/foo/**',
-            '__tests__/src/**',
+            '__tests__/src/func.js',
             '__tests__/main.test.ts',
             '__tests__/characterization.test.ts'
         ]
