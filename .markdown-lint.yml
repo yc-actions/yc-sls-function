@@ -5,3 +5,10 @@ MD004:
 # Ordered list item prefix
 MD029:
     style: one
+
+# Unordered list indentation
+# Prettier owns formatting here, and .prettierrc.yml sets tabWidth: 4, so it
+# normalizes nested list items to 4 spaces. MD007 defaults to 2, which would
+# make `npm run format:write` and this linter demand opposite things.
+MD007:
+    indent: 4
