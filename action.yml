@@ -2,171 +2,171 @@ name: 'YC Function deploy'
 description: 'GitHub Action to deploy Serverless Function to Yandex Cloud.'
 author: 'Nikolay Matrosov'
 inputs:
-  yc-sa-json-credentials:
-    required: false
-    description: 'JSON containing authorized key for Service Account.
-      Either this or `yc-iam-token` or `yc-sa-id` should be provided.
-      More info https://cloud.yandex.ru/docs/container-registry/operations/authentication#sa-json'
-  yc-iam-token:
-    required: false
-    description: 'IAM token for Yandex Cloud. 
-      Either this or `yc-sa-json-credentials` or `yc-sa-id` should be provided.
-      More info https://yandex.cloud/ru/docs/iam/concepts/authorization/iam-token'
-  yc-sa-id:
-    required: false
-    description: 'Service Account ID. Will be uses to exchange GitHub token to Yandex Cloud token.
-      Either this or `yc-iam-token` or `yc-sa-json-credentials` should be provided.
-      More info https://yandex.cloud/ru/docs/iam/concepts/workload-identity'
-  folder-id:
-    required: true
-    description: 'Folder ID'
-  function-name:
-    description: 'Function Name'
-    default: ''
-    required: true
-  bucket:
-    description: 'Object Storage bucket name for code'
-    default: ''
-    required: false
-  mounts:
-    description: 'Object Storage mounts. Multiline. Short syntax: <bucket>:<mount-point>[:<prefix>][:ro]'
-    required: false
-    default: ''
-  runtime:
-    description: 'Runtime for function.'
-    default: ''
-    required: true
-  entrypoint:
-    description: 'Entrypoint for function'
-    default: ''
-    required: true
-  include:
-    description: 'Source directories for cloud function in git repo. Multiline'
-    default: '.'
-    required: false
-  exclude:
-    description: 'Exclude patterns for source directory. Multiline'
-    default: ''
-    required: false
-  source-root:
-    description: 'Path that will considered as function source root.'
-    required: false
-    default: '.'
-  memory:
-    description: 'Memory in Mb. Pattern: ^\d+Mb$'
-    default: '128Mb'
-    required: false
-  environment:
-    description: 'Env variables for function. Multiline'
-    default: ''
-    required: false
-  execution-timeout:
-    description: 'Execution timeout in seconds'
-    default: '5'
-    required: false
-  service-account:
-    description: 'Service account ID for function'
-    default: ''
-    required: false
-  service-account-name:
-    description: 'Service account name for function. Will be used to find out the ID of SA.'
-    default: ''
-    required: false
-  secrets:
-    description: 'Lockbox secrets. Pattern: "<environmentVariable>=<secretId>/<versionId>/<secretKey>". Multiline'
-    default: ''
-    required: false
-  network-id:
-    description: 'Function version connectivity. If specified the version will be attached to specified network/subnet(s).'
-    default: ''
-    required: false
-  tags:
-    description: 'Version tags. Multiline'
-    default: ''
-    required: false
-  logs-disabled:
-    description: 'Disable functions logging. Default false'
-    default: 'false'
-    required: false
-  logs-group-id:
-    description: 'Logs group ID. If NOT set, logs will write to auto-created default group.'
-    default: ''
-    required: false
-  log-level:
-    description: 'Minimum log level (trace, debug, info, warn, error, fatal)'
-    default: ''
-    required: false
-  async:
-    description: 'Enable async invocation'
-    default: 'false'
-    required: false
-  async-sa-id:
-    description: |
-      Service account which has permission to invoke the function.
-      If not set, the function will be invoked with the default service account.
-    default: ''
-    required: false
-  async-sa-name:
-    description: |
-      Service account which has permission to invoke the function.
-      If not set, the function will be invoked with the default service account.
-      Use either this or `async-sa-id`.
-    default: ''
-    required: false
-  async-retries-count:
-    description:
-      'Number of retries of async invocations.'
-    default: ''
-    required: false
-  async-success-ymq-arn:
-    description: |
-      Target for successful result of the version's invocation.
-      Queue ARN if target should send a result to YMQ.
-    default: ''
-    required: false
-  async-success-sa-id:
-    description: |
-      Target for successful result of the version's invocation.
-      Id of service account which has write permission on the queue, if target should send a result to YMQ.
-    default: ''
-    required: false
-  async-success-sa-name:
-    description: |
-      Target for successful result of the version's invocation.
-      Name of service account which has write permission on the queue, if target should send a result to YMQ.
-      Use either this or `async-success-sa-id`.
-    default: ''
-    required: false
-  async-failure-ymq-arn:
-    description: |
-      Target for unsuccessful result, if all retries failed.
-      Queue ARN if target should send a result to YMQ.
-    default: ''
-    required: false
-  async-failure-sa-id:
-    description: |
-      Target for unsuccessful result, if all retries failed.
-      Service account which has write permission on the queue, if target should send a result to YMQ.
-    default: ''
-    required: false
-  async-failure-sa-name:
-    description: |
-      Target for unsuccessful result, if all retries failed.
-      Name of service account which has write permission on the queue, if target should send a result to YMQ.
-      Use either this or `async-failure-sa-id`.
-    default: ''
-    required: false
-
+    yc-sa-json-credentials:
+        required: false
+        description:
+            'JSON containing authorized key for Service Account. Either this or `yc-iam-token` or `yc-sa-id` should be
+            provided. More info https://cloud.yandex.ru/docs/container-registry/operations/authentication#sa-json'
+    yc-iam-token:
+        required: false
+        description:
+            'IAM token for Yandex Cloud. Either this or `yc-sa-json-credentials` or `yc-sa-id` should be provided. More
+            info https://yandex.cloud/ru/docs/iam/concepts/authorization/iam-token'
+    yc-sa-id:
+        required: false
+        description:
+            'Service Account ID. Will be uses to exchange GitHub token to Yandex Cloud token. Either this or
+            `yc-iam-token` or `yc-sa-json-credentials` should be provided. More info
+            https://yandex.cloud/ru/docs/iam/concepts/workload-identity'
+    folder-id:
+        required: true
+        description: 'Folder ID'
+    function-name:
+        description: 'Function Name'
+        default: ''
+        required: true
+    bucket:
+        description: 'Object Storage bucket name for code'
+        default: ''
+        required: false
+    mounts:
+        description: 'Object Storage mounts. Multiline. Short syntax: <bucket>:<mount-point>[:<prefix>][:ro]'
+        required: false
+        default: ''
+    runtime:
+        description: 'Runtime for function.'
+        default: ''
+        required: true
+    entrypoint:
+        description: 'Entrypoint for function'
+        default: ''
+        required: true
+    include:
+        description: 'Source directories for cloud function in git repo. Multiline'
+        default: '.'
+        required: false
+    exclude:
+        description: 'Exclude patterns for source directory. Multiline'
+        default: ''
+        required: false
+    source-root:
+        description: 'Path that will considered as function source root.'
+        required: false
+        default: '.'
+    memory:
+        description: 'Memory in Mb. Pattern: ^\d+Mb$'
+        default: '128Mb'
+        required: false
+    environment:
+        description: 'Env variables for function. Multiline'
+        default: ''
+        required: false
+    execution-timeout:
+        description: 'Execution timeout in seconds'
+        default: '5'
+        required: false
+    service-account:
+        description: 'Service account ID for function'
+        default: ''
+        required: false
+    service-account-name:
+        description: 'Service account name for function. Will be used to find out the ID of SA.'
+        default: ''
+        required: false
+    secrets:
+        description: 'Lockbox secrets. Pattern: "<environmentVariable>=<secretId>/<versionId>/<secretKey>". Multiline'
+        default: ''
+        required: false
+    network-id:
+        description:
+            'Function version connectivity. If specified the version will be attached to specified network/subnet(s).'
+        default: ''
+        required: false
+    tags:
+        description: 'Version tags. Multiline'
+        default: ''
+        required: false
+    logs-disabled:
+        description: 'Disable functions logging. Default false'
+        default: 'false'
+        required: false
+    logs-group-id:
+        description: 'Logs group ID. If NOT set, logs will write to auto-created default group.'
+        default: ''
+        required: false
+    log-level:
+        description: 'Minimum log level (trace, debug, info, warn, error, fatal)'
+        default: ''
+        required: false
+    async:
+        description: 'Enable async invocation'
+        default: 'false'
+        required: false
+    async-sa-id:
+        description: |
+            Service account which has permission to invoke the function.
+            If not set, the function will be invoked with the default service account.
+        default: ''
+        required: false
+    async-sa-name:
+        description: |
+            Service account which has permission to invoke the function.
+            If not set, the function will be invoked with the default service account.
+            Use either this or `async-sa-id`.
+        default: ''
+        required: false
+    async-retries-count:
+        description: 'Number of retries of async invocations.'
+        default: ''
+        required: false
+    async-success-ymq-arn:
+        description: |
+            Target for successful result of the version's invocation.
+            Queue ARN if target should send a result to YMQ.
+        default: ''
+        required: false
+    async-success-sa-id:
+        description: |
+            Target for successful result of the version's invocation.
+            Id of service account which has write permission on the queue, if target should send a result to YMQ.
+        default: ''
+        required: false
+    async-success-sa-name:
+        description: |
+            Target for successful result of the version's invocation.
+            Name of service account which has write permission on the queue, if target should send a result to YMQ.
+            Use either this or `async-success-sa-id`.
+        default: ''
+        required: false
+    async-failure-ymq-arn:
+        description: |
+            Target for unsuccessful result, if all retries failed.
+            Queue ARN if target should send a result to YMQ.
+        default: ''
+        required: false
+    async-failure-sa-id:
+        description: |
+            Target for unsuccessful result, if all retries failed.
+            Service account which has write permission on the queue, if target should send a result to YMQ.
+        default: ''
+        required: false
+    async-failure-sa-name:
+        description: |
+            Target for unsuccessful result, if all retries failed.
+            Name of service account which has write permission on the queue, if target should send a result to YMQ.
+            Use either this or `async-failure-sa-id`.
+        default: ''
+        required: false
 
 outputs:
-  function-id:
-    description: 'Function ID.'
-  version-id:
-    description: 'ID of the newly created function version.'
+    function-id:
+        description: 'Function ID.'
+    version-id:
+        description: 'ID of the newly created function version.'
 
 branding:
-  color: blue
-  icon: code
+    color: blue
+    icon: code
 runs:
-  using: 'node22'
-  main: 'dist/index.js'
+    using: 'node22'
+    main: 'dist/index.js'

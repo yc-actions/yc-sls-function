@@ -9,9 +9,9 @@
  * @module
  */
 
-import { ActionInputs } from './action-inputs'
+import { ActionInputs } from './action-inputs.js'
 import { Session } from '@yandex-cloud/nodejs-sdk'
-import { resolveServiceAccountId } from './service-account'
+import { resolveServiceAccountId } from './service-account.js'
 import {
     AsyncInvocationConfig,
     AsyncInvocationConfig_ResponseTarget

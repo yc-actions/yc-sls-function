@@ -27,11 +27,11 @@ import { context } from '@actions/github'
 import { errors, Session, waitForOperation } from '@yandex-cloud/nodejs-sdk'
 import { functionService } from '@yandex-cloud/nodejs-sdk/serverless-functions-v1'
 import { secretService } from '@yandex-cloud/nodejs-sdk/lockbox-v1'
-import { StorageServiceImpl } from './storage'
-import { StorageObject } from './storage/storage-object'
-import { ActionInputs } from './action-inputs'
-import { resolveServiceAccountId } from './service-account'
-import { createAsyncInvocationConfig } from './async-invocation'
+import { StorageServiceImpl } from './storage/index.js'
+import { StorageObject } from './storage/storage-object.js'
+import { ActionInputs } from './action-inputs.js'
+import { resolveServiceAccountId } from './service-account.js'
+import { createAsyncInvocationConfig } from './async-invocation.js'
 import { SessionConfig } from '@yandex-cloud/nodejs-sdk/dist/types'
 import { createHash } from 'crypto'
 import {
@@ -50,10 +50,10 @@ import {
     parseMounts,
     parseServiceAccountJsonFile,
     Secret
-} from './parse'
-import { writeSummary } from './summary'
-import { zipSources } from './zip'
-import { exchangeToken } from './auth'
+} from './parse/index.js'
+import { writeSummary } from './summary.js'
+import { zipSources } from './zip.js'
+import { exchangeToken } from './auth.js'
 import archiver from 'archiver'
 
 /**

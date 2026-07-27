@@ -1,72 +1,85 @@
 {
-  "name": "yc-actions-yc-sls-function",
-  "version": "4.1.1",
-  "description": "GitHub Action to deploy Serverless Function to Yandex Cloud.",
-  "main": "lib/src/index.js",
-  "scripts": {
-    "build": "tsc",
-    "format": "prettier --write '**/*.ts'",
-    "format-check": "prettier --check '**/*.ts'",
-    "lint": "eslint src/**/*.ts --fix",
-    "package": "ncc build --source-map --license licenses.txt",
-    "test": "GITHUB_WORKSPACE=__tests__ jest --verbose",
-    "all": "npm run build && npm run format && npm run lint && npm run package && npm test",
-    "git-tag": "git tag v`cat package.json | jq -r '.version' | awk -F. '{print $1}'` -f &&  git tag v`cat package.json | jq -r '.version'` -f"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/yc-actions/yc-sls-function.git"
-  },
-  "keywords": [
-    "actions",
-    "yandex cloud",
-    "serverless",
-    "deploy"
-  ],
-  "author": "Nikolay Matrosov",
-  "license": "MIT",
-  "dependencies": {
-    "@actions/core": "^2.0.2",
-    "@actions/github": "^7.0.0",
-    "@grpc/grpc-js": "^1.14.3",
-    "@yandex-cloud/nodejs-sdk": "^3.0.0-beta.1",
-    "archiver": "^7.0.1",
-    "axios": "^1.18.1",
-    "glob": "^13.0.6",
-    "long": "5.3.2",
-    "minimatch": "^10.2.5",
-    "minimist": ">=1.2.8",
-    "path-scurry": "^2.0.2",
-    "stream-buffers": "^3.0.3"
-  },
-  "devDependencies": {
-    "@eslint/eslintrc": "^3.3.5",
-    "@eslint/js": "^9.39.2",
-    "@stylistic/eslint-plugin-ts": "^4.4.1",
-    "@types/archiver": "^7.0.0",
-    "@types/jest": "^30.0.0",
-    "@types/mustache": "^4.2.6",
-    "@types/node": "^25.5.0",
-    "@types/stream-buffers": "^3.0.8",
-    "@typescript-eslint/eslint-plugin": "^8.59.1",
-    "@typescript-eslint/parser": "^8.59.3",
-    "@vercel/ncc": "^0.38.4",
-    "dotenv": "^17.4.2",
-    "eslint": "^9.39.2",
-    "eslint-import-resolver-typescript": "^4.4.4",
-    "eslint-plugin-github": "^6.0.0",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jest": "^29.15.2",
-    "eslint-plugin-jsonc": "^3.1.2",
-    "eslint-plugin-prettier": "^5.5.5",
-    "globals": "^17.6.0",
-    "jest": "^30.3.0",
-    "js-yaml": "^4.1.1",
-    "prettier": "3.7.4",
-    "ts-jest": "^29.4.9",
-    "typescript": "^5.9.3"
-  },
-  "overrides": {
-    "undici": "^6.28.0"
-  }
+    "name": "yc-actions-yc-sls-function",
+    "version": "4.1.1",
+    "description": "GitHub Action to deploy Serverless Function to Yandex Cloud.",
+    "type": "module",
+    "exports": {
+        ".": "./dist/index.js"
+    },
+    "engines": {
+        "node": ">=24.0.0"
+    },
+    "scripts": {
+        "bundle": "npm run format:write && npm run package",
+        "ci-test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 GITHUB_WORKSPACE=__fixtures__/workspace npx jest --ci",
+        "coverage": "npx make-coverage-badge --output-path ./badges/coverage.svg",
+        "format:write": "npx prettier --write .",
+        "format:check": "npx prettier --check .",
+        "lint": "npx eslint .",
+        "local-action": "npx @github/local-action . src/main.ts .env",
+        "package": "npx rimraf ./dist && npx rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
+        "package:watch": "npm run package -- --watch",
+        "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 GITHUB_WORKSPACE=__fixtures__/workspace npx jest",
+        "all": "npm run format:write && npm run lint && npm run test && npm run coverage && npm run package",
+        "git-tag": "git tag v`cat package.json | jq -r '.version' | awk -F. '{print $1}'` -f &&  git tag v`cat package.json | jq -r '.version'` -f"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/yc-actions/yc-sls-function.git"
+    },
+    "keywords": [
+        "actions",
+        "yandex cloud",
+        "serverless",
+        "deploy"
+    ],
+    "author": "Nikolay Matrosov",
+    "license": "MIT",
+    "dependencies": {
+        "@actions/core": "^2.0.2",
+        "@actions/github": "^7.0.0",
+        "@grpc/grpc-js": "^1.14.3",
+        "@yandex-cloud/nodejs-sdk": "^3.0.0-beta.1",
+        "archiver": "^7.0.1",
+        "axios": "^1.18.1",
+        "glob": "^13.0.6",
+        "long": "5.3.2",
+        "minimatch": "^10.2.5",
+        "minimist": ">=1.2.8",
+        "path-scurry": "^2.0.2",
+        "stream-buffers": "^3.0.3"
+    },
+    "devDependencies": {
+        "@eslint/compat": "^2.1.0",
+        "@eslint/eslintrc": "^3.3.5",
+        "@eslint/js": "^9.39.2",
+        "@github/local-action": "^7.0.1",
+        "@jest/globals": "^30.4.1",
+        "@rollup/plugin-commonjs": "^29.0.3",
+        "@rollup/plugin-node-resolve": "^16.0.3",
+        "@rollup/plugin-typescript": "^12.3.0",
+        "@types/archiver": "^7.0.0",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^25.5.0",
+        "@types/stream-buffers": "^3.0.8",
+        "@typescript-eslint/eslint-plugin": "^8.59.1",
+        "@typescript-eslint/parser": "^8.59.3",
+        "dotenv": "^17.4.2",
+        "eslint": "^9.39.2",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-jest": "^29.15.2",
+        "eslint-plugin-prettier": "^5.5.5",
+        "globals": "^17.6.0",
+        "jest": "^30.3.0",
+        "make-coverage-badge": "^1.2.0",
+        "prettier": "3.7.4",
+        "rimraf": "^6.1.3",
+        "rollup": "^4.62.3",
+        "ts-jest": "^29.4.9",
+        "ts-jest-resolver": "^2.0.1",
+        "typescript": "^5.9.3"
+    },
+    "overrides": {
+        "undici": "^6.28.0"
+    }
 }

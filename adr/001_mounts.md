@@ -2,7 +2,10 @@
 
 ## Context
 
-Yandex Cloud Serverless Functions recently introduced support for mounting Object Storage buckets directly into the function's filesystem. This feature allows functions to access bucket contents as files, improving performance and simplifying code that needs to read large or many files. Issue [#595](https://github.com/yc-actions/yc-sls-function/issues/595) requests support for this feature in the GitHub Action.
+Yandex Cloud Serverless Functions recently introduced support for mounting Object Storage buckets directly into the
+function's filesystem. This feature allows functions to access bucket contents as files, improving performance and
+simplifying code that needs to read large or many files. Issue
+[#595](https://github.com/yc-actions/yc-sls-function/issues/595) requests support for this feature in the GitHub Action.
 
 ## Goals
 
@@ -19,7 +22,8 @@ Yandex Cloud Serverless Functions recently introduced support for mounting Objec
 
 ## High-Level Design
 
-- Extend `ActionInputs` and `action.yml` to accept a new `mounts` input (multiline, short syntax similar to Docker Compose).
+- Extend `ActionInputs` and `action.yml` to accept a new `mounts` input (multiline, short syntax similar to Docker
+  Compose).
 - Parse and validate the `mounts` input in `src/main.ts`.
 - When creating a function version, add the `mounts` field to the `CreateFunctionVersionRequest` if provided.
 - Add tests and update documentation.
@@ -34,7 +38,8 @@ Each line in the `mounts` input should be in the form:
 <mount-point>:<bucket>[/<prefix>][:ro]
 ```
 
-- `mount-point` (required): Directory name to mount the bucket to (will be available as `/function/storage/<mount-point>`).
+- `mount-point` (required): Directory name to mount the bucket to (will be available as
+  `/function/storage/<mount-point>`).
 - `bucket` (required): Name of the Object Storage bucket.
 - `prefix` (optional): Prefix within the bucket to mount (leave empty to mount the entire bucket).
 - `ro` (optional): If present, mount is read-only. Otherwise, mount is read-write.
@@ -53,32 +58,33 @@ mount:bucket/prefix:ro
 ## Implementation Plan
 
 1. **Research SDK Support**
-   - Confirm the latest `@yandex-cloud/nodejs-sdk` exposes the `mounts` field in `CreateFunctionVersionRequest`.
-   - If not, update the SDK dependency.
+    - Confirm the latest `@yandex-cloud/nodejs-sdk` exposes the `mounts` field in `CreateFunctionVersionRequest`.
+    - If not, update the SDK dependency.
 
 2. **Update Action Inputs**
-   - Add a new `mounts` input to `action.yml` (multiline, optional, short syntax as above).
-   - Extend `ActionInputs` type in `src/action-inputs.ts` to include `mounts: string[]`.
+    - Add a new `mounts` input to `action.yml` (multiline, optional, short syntax as above).
+    - Extend `ActionInputs` type in `src/action-inputs.ts` to include `mounts: string[]`.
 
 3. **Parse and Validate Mounts**
-   - In `src/main.ts`, parse each line of the `mounts` input into an object with fields: `mountPoint`, `bucket`, `prefix`, `readOnly`.
-   - Validate required fields (mount-point, bucket name).
-   - Convert to the structure expected by the SDK.
+    - In `src/main.ts`, parse each line of the `mounts` input into an object with fields: `mountPoint`, `bucket`,
+      `prefix`, `readOnly`.
+    - Validate required fields (mount-point, bucket name).
+    - Convert to the structure expected by the SDK.
 
 4. **Pass Mounts to API**
-   - When building the `CreateFunctionVersionRequest`, add the `mounts` field if mounts are specified.
-   - Ensure correct serialization and compatibility with the SDK/API.
+    - When building the `CreateFunctionVersionRequest`, add the `mounts` field if mounts are specified.
+    - Ensure correct serialization and compatibility with the SDK/API.
 
 5. **Testing**
-   - Add unit tests for parsing and validation logic.
-   - Add integration tests (mocked) to verify the mounts are passed to the API.
+    - Add unit tests for parsing and validation logic.
+    - Add integration tests (mocked) to verify the mounts are passed to the API.
 
 6. **Documentation**
-   - Update `README.md` with usage examples for the new `mounts` input (short syntax).
-   - Document limitations and links to Yandex Cloud docs.
+    - Update `README.md` with usage examples for the new `mounts` input (short syntax).
+    - Document limitations and links to Yandex Cloud docs.
 
 7. **Release**
-   - Bump version, update changelog, and release.
+    - Bump version, update changelog, and release.
 
 ## Example Usage (to be documented)
 
@@ -86,13 +92,13 @@ mount:bucket/prefix:ro
 - name: Deploy Function with Object Storage Mount
   uses: yc-actions/yc-sls-function@v4
   with:
-    mounts: |
-      data:my-bucket
-      images:my-bucket/photos
-      logs:my-bucket:ro
-      images:my-bucket/photos:ro
-      mount:bucket/prefix
-      mount:bucket/prefix:ro
+      mounts: |
+          data:my-bucket
+          images:my-bucket/photos
+          logs:my-bucket:ro
+          images:my-bucket/photos:ro
+          mount:bucket/prefix
+          mount:bucket/prefix:ro
 ```
 
 ## Open Questions

@@ -1,5 +1,5 @@
-import { StorageObject } from '../storage-object'
-import { StorageService } from '../index'
+import { StorageObject } from '../storage-object.js'
+import { StorageService } from '../index.js'
 
 export class StorageServiceImpl implements StorageService {
     static __endpointId = 'storage'

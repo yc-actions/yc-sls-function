@@ -9,7 +9,7 @@
 import archiver from 'archiver'
 import { debug, endGroup, info, startGroup } from '@actions/core'
 import { WritableStreamBuffer } from 'stream-buffers'
-import { KB, parseIgnoreGlobPatterns } from './parse'
+import { KB, parseIgnoreGlobPatterns } from './parse/index.js'
 import path from 'node:path'
 import { glob } from 'glob'
 import { lstatSync } from 'node:fs'
