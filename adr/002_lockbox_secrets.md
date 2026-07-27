@@ -32,6 +32,9 @@ This ADR outlines the approach for integrating Lockbox secrets into the `yc-sls-
 3. **'Latest' Version Resolution**: A helper function, `resolveLatestLockboxVersions`, will be implemented in
    `src/main.ts`. This function will query the Lockbox API to resolve the `latest` tag to a specific version ID for any
    secrets that use it.
+
+    > _Note (2026-07-27, v5.0.0): `resolveLatestLockboxVersions` now lives in `src/lockbox.ts`._
+
 4. **API Request**: The resolved secrets will be included in the `CreateFunctionVersionRequest` sent to the Yandex Cloud
    API.
 5. **Documentation & Testing**: The `README.md` will be updated to document the new feature, and comprehensive unit
@@ -80,10 +83,15 @@ DB_PASSWORD=e6q8f2j8b3j9b3j9b3j9/latest/db-password
       Yandex Cloud SDK to fetch the secret's details and find the ID of the `currentVersion`.
     - It will return a new list of secrets with all `latest` tags replaced by concrete version IDs.
 
+    > _Note (2026-07-27, v5.0.0): implemented in `src/lockbox.ts`, not `src/main.ts`._
+
 4. **Integrate into API Call**:
     - In `createFunctionVersion` within `src/main.ts`, call `resolveLatestLockboxVersions` before building the
       `CreateFunctionVersionRequest`.
     - Assign the resolved secrets to the `secrets` property of the request object.
+
+    > _Note (2026-07-27, v5.0.0): `createFunctionVersion` now lives in `src/function/version.ts`; it calls
+    > `resolveLatestLockboxVersions` from `src/lockbox.ts`._
 
 5. **Testing**:
     - Add unit tests for `parseLockboxVariables` to cover valid and invalid input formats.

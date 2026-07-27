@@ -70,4 +70,4 @@ jobs:
 
             - name: Run Bundle Smoke Test
               id: smoke
-              run: npm run ci-test -- __tests__/bundle.test.ts
+              run: npm run ci-test -- __tests__/bundle.test.ts --coverage=false

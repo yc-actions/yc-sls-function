@@ -25,6 +25,10 @@ simplifying code that needs to read large or many files. Issue
 - Extend `ActionInputs` and `action.yml` to accept a new `mounts` input (multiline, short syntax similar to Docker
   Compose).
 - Parse and validate the `mounts` input in `src/main.ts`.
+
+    > _Note (2026-07-27, v5.0.0): mounts parsing moved to `src/parse/mounts.ts` (`parseMounts`) when `src/main.ts` was
+    > split into focused modules._
+
 - When creating a function version, add the `mounts` field to the `CreateFunctionVersionRequest` if provided.
 - Add tests and update documentation.
 
@@ -70,6 +74,9 @@ mount:bucket/prefix:ro
       `prefix`, `readOnly`.
     - Validate required fields (mount-point, bucket name).
     - Convert to the structure expected by the SDK.
+
+    > _Note (2026-07-27, v5.0.0): this parsing/validation step is implemented in `src/parse/mounts.ts` (`parseMounts`),
+    > not `src/main.ts`._
 
 4. **Pass Mounts to API**
     - When building the `CreateFunctionVersionRequest`, add the `mounts` field if mounts are specified.

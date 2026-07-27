@@ -50,7 +50,7 @@ const requiredInputs: Record<string, string> = {
 const defaultValues: Record<string, string> = {
     ...requiredInputs,
     bucket: 'some-bucket',
-    sourceRoot: '.',
+    'source-root': '.',
     memory: '128Mb',
     environment: 'FOO=BAR\nFOO2=BAR2',
     'execution-timeout': '5',

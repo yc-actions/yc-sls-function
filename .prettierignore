@@ -3,7 +3,13 @@ dist/
 node_modules/
 package-lock.json
 __tests__/__snapshots__/
-# Deviation from task-2-brief.md: these are the plan/spec docs for this very
-# rewrite, actively read by tooling during execution. Reformatting them
-# mid-run would corrupt the process.
+# These are design and planning documents, kept in their authored prose form;
+# Prettier's proseWrap would reformat their line structure in ways that lose
+# the authors' intended emphasis and readability.
 docs/superpowers/
+
+# GitHub issue form templates: proseWrap collapses their prompt paragraphs into
+# run-on lines, which renders as a wall of text in the pre-filled textarea a
+# reporter sees, and YAML reformatting changes indentation/quoting GitHub does
+# not require. Keep these in their authored form.
+.github/ISSUE_TEMPLATE/
