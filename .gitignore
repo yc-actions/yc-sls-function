@@ -100,3 +100,7 @@ lib/**/*
 
 .idea
 key.json
+
+# Agent scratch: worktrees and subagent-driven-development workspaces
+.claude/worktrees/
+.superpowers/
