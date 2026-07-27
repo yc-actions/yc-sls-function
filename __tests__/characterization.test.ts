@@ -47,7 +47,7 @@ const REQUIRED: Record<string, string> = {
     async: 'false'
 }
 
-const SCENARIOS: { name: string; inputs: Record<string, string>; setup?: () => void }[] = [
+const SCENARIOS: Array<{ name: string; inputs: Record<string, string>; setup?: () => void }> = [
     {
         name: 'required inputs only, inline upload, SA JSON credentials',
         inputs: { ...REQUIRED, 'yc-sa-json-credentials': SA_JSON }
@@ -82,9 +82,7 @@ const SCENARIOS: { name: string; inputs: Record<string, string>; setup?: () => v
         name: 'service account resolved by name',
         inputs: { ...REQUIRED, 'yc-sa-json-credentials': SA_JSON, 'service-account-name': 'service-account-name' },
         setup: () =>
-            __setServiceAccountList([
-                ServiceAccount.fromJSON({ id: 'serviceaccountid', name: 'service-account-name' })
-            ])
+            __setServiceAccountList([ServiceAccount.fromJSON({ id: 'serviceaccountid', name: 'service-account-name' })])
     },
     {
         name: 'log options',
