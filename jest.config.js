@@ -8,6 +8,14 @@ export default {
     coverageDirectory: './coverage',
     coveragePathIgnorePatterns: ['/node_modules/', '/dist/'],
     coverageReporters: ['json-summary', 'text', 'lcov'],
+    coverageThreshold: {
+        global: {
+            branches: 42,
+            functions: 45,
+            lines: 50,
+            statements: 50
+        }
+    },
     extensionsToTreatAsEsm: ['.ts'],
     moduleFileExtensions: ['ts', 'js'],
     preset: 'ts-jest',
