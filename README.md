@@ -8,6 +8,7 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
 
 - [Usage](#usage)
 - [Permissions](#permissions)
+- [Development](#development)
 - [License Summary](#license-summary)
 
 <!-- tocstop -->
@@ -17,7 +18,7 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
 ```yaml
 - name: Deploy Function
   id: sls-func
-  uses: yc-actions/yc-sls-function@v4
+  uses: yc-actions/yc-sls-function@v5
   with:
       yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
       bucket: ${{ secrets.BUCKET }}
@@ -94,7 +95,7 @@ mount:bucket/prefix:ro
 
 ```yaml
 - name: Deploy Function with Object Storage Mount
-  uses: yc-actions/yc-sls-function@v4
+  uses: yc-actions/yc-sls-function@v5
   with:
       mounts: |
           data:my-bucket
@@ -134,7 +135,7 @@ To make the function be able to be invoked asynchronously, you need to set the `
 ```yaml
 - name: Deploy Function
   id: sls-func
-  uses: yc-actions/yc-sls-function@v4
+  uses: yc-actions/yc-sls-function@v5
   with:
       yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
       bucket: ${{ secrets.BUCKET }}
@@ -199,6 +200,17 @@ The service account provided to function via `service-account` parameter must ha
 | `kms.keys.encrypterDecrypter` | To decrypt the Lockbox secrets, if they are encrypted with KMS key. |
 | `storage.viewer`              | To mount a bucket in read-only mode (`:ro` in mounts input).        |
 | `storage.uploader`            | To mount a bucket in read-write mode (default, or no `:ro`).        |
+
+## Development
+
+This action requires Node.js 24 to build and test.
+
+- `npm run bundle` — format the repository and rebuild `dist/index.js`. Run this before committing any change under
+  `src/`, since `dist/` is what GitHub Actions executes.
+- `npm test` — run the Jest suite.
+- `npm run lint` — run ESLint.
+- `npm run local-action` — run the action locally against a `.env` file. Copy `.env.example` to `.env`, fill in
+  credentials and inputs, then run the command.
 
 ## License Summary
 
