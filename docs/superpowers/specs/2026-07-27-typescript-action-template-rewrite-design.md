@@ -58,8 +58,19 @@ Both call sites are lazy. `channelz.setup()` runs at import time but only *regis
 `getChannelzServiceDefinition` as a callback; the proto load fires when an admin service is
 actually served. `orca.js` loads only under xds. A client-only action reaches neither. But
 `__dirname` is undefined in a Rollup ESM bundle, so if either path were reached it would raise
-`ReferenceError` rather than working. The design therefore keeps both the shim and the assets
-so the bundle is no more fragile than the ncc one.
+`ReferenceError` rather than working.
+
+**Copying the protos to `dist/proto/` cannot restore parity.** With `__dirname` shimmed to the
+real `dist/`, `${__dirname}/../../proto` resolves *above* the action checkout — for an action
+installed at `_actions/yc-actions/yc-sls-function/v5/`, it points at
+`_actions/yc-actions/yc-sls-function/proto`, a sibling of the version directory that is not part
+of any checkout. Making it land inside `dist/` would mean pointing `__dirname` at a fabricated
+path such as `dist/node_modules/@grpc/grpc-js/build/src`, which breaks `__dirname` for every
+other consumer in the bundle.
+
+So the design shims `__dirname` honestly and does **not** ship the `.proto` files. With the shim
+in place, the failure mode if either path were ever reached is a clear `ENOENT` on a real path
+rather than a `ReferenceError`. The real-deploy verification is the check on this reasoning.
 
 ## Architecture
 
@@ -151,16 +162,14 @@ and Yandex SDK deep specifiers are left alone.
 
 ### Bundling
 
-Rollup as in the template, plus two additions the template does not need:
-
-1. **`__dirname` shim.** Rollup ESM output leaves `__dirname` as a free variable. Define it in
-   `output.banner` from `import.meta.url` so the grpc-js include paths resolve.
-2. **Proto asset copy.** Copy `@grpc/grpc-js/proto/**` to `dist/proto/**`, at the layout
-   `${__dirname}/../../proto` expects given the shim's value.
+Rollup as in the template, plus one addition the template does not need: an `output.banner` that
+defines `require`, `__filename`, and `__dirname` from `import.meta.url`. The CommonJS
+dependencies in this graph (`@yandex-cloud/nodejs-sdk`, `@grpc/grpc-js`, `archiver`) reference
+all three, and none exist in an ES module.
 
 Dropped from `dist/`: `licenses.txt` and `sourcemap-register.js` (ncc-specific — Rollup emits
-`index.js` and `index.js.map`), and the top-level `dist/xds/` and `dist/protoc-gen-validate/`
-trees, which were ncc duplicates of content already under `dist/proto/`.
+`index.js` and `index.js.map`), and the `proto/`, `xds/`, and `protoc-gen-validate/` trees, for
+the reason given under Findings.
 
 ## Test harness
 
