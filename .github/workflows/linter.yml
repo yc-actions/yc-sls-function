@@ -41,7 +41,12 @@ jobs:
               uses: super-linter/super-linter/slim@v8
               env:
                   DEFAULT_BRANCH: main
-                  FILTER_REGEX_EXCLUDE: dist/**/*
+                  # docs/superpowers/ is excluded for the same reason
+                  # .prettierignore excludes it: those are design and planning
+                  # documents kept in their authored prose form. textlint's
+                  # terminology rules in particular would rewrite "README" to
+                  # "readme" and "re-export" to "reexport" in them.
+                  FILTER_REGEX_EXCLUDE: (dist/|docs/superpowers/).*
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   # This repo keeps .markdown-lint.yml and .yaml-lint.yml at the
                   # root rather than in .github/linters/, which is where
