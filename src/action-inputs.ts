@@ -1,3 +1,6 @@
+import { getBooleanInput, getInput, getMultilineInput } from '@actions/core'
+import { parseLogLevel, parseMemory } from './parse/index.js'
+
 /**
  * Complete configuration for Yandex Cloud Serverless Function deployment.
  * Parsed from GitHub Action inputs.
@@ -97,4 +100,46 @@ export type ActionInputs = {
 
     /** Service account name for failure queue (resolved to ID) */
     asyncFailureSaName: string
+}
+
+/**
+ * Reads every action input and parses it into the deployment configuration.
+ *
+ * @returns Parsed configuration
+ * @throws {Error} If a required input is missing or a value fails to parse
+ */
+export function readInputs(): ActionInputs {
+    return {
+        folderId: getInput('folder-id', { required: true }),
+        functionName: getInput('function-name', { required: true }),
+        runtime: getInput('runtime', { required: true }),
+        entrypoint: getInput('entrypoint', { required: true }),
+        memory: parseMemory(getInput('memory', { required: false }) || '128Mb'),
+        include: getMultilineInput('include', { required: false }),
+        excludePattern: getMultilineInput('exclude', { required: false }),
+        sourceRoot: getInput('source-root', { required: false }) || '.',
+        executionTimeout: parseInt(getInput('execution-timeout', { required: false }) || '5', 10),
+        environment: getMultilineInput('environment', { required: false }),
+        serviceAccount: getInput('service-account', { required: false }),
+        serviceAccountName: getInput('service-account-name', { required: false }),
+        bucket: getInput('bucket', { required: false }),
+        description: getInput('description', { required: false }),
+        secrets: getMultilineInput('secrets', { required: false }),
+        networkId: getInput('network-id', { required: false }),
+        tags: getMultilineInput('tags', { required: false }),
+        logsDisabled: getBooleanInput('logs-disabled', { required: false }) || false,
+        logsGroupId: getInput('logs-group-id', { required: false }),
+        logLevel: parseLogLevel(getInput('log-level', { required: false, trimWhitespace: true })),
+        async: getBooleanInput('async', { required: false }),
+        asyncSaId: getInput('async-sa-id', { required: false }),
+        asyncSaName: getInput('async-sa-name', { required: false }),
+        asyncRetriesCount: parseInt(getInput('async-retries-count', { required: false }) || '3', 10),
+        asyncSuccessYmqArn: getInput('async-success-ymq-arn', { required: false }),
+        asyncSuccessSaId: getInput('async-success-sa-id', { required: false }),
+        asyncFailureYmqArn: getInput('async-failure-ymq-arn', { required: false }),
+        asyncFailureSaId: getInput('async-failure-sa-id', { required: false }),
+        asyncSuccessSaName: getInput('async-success-sa-name', { required: false }),
+        asyncFailureSaName: getInput('async-failure-sa-name', { required: false }),
+        mounts: getMultilineInput('mounts', { required: false })
+    }
 }
