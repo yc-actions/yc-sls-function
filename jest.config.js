@@ -15,13 +15,12 @@ export default {
     resolver: 'ts-jest-resolver',
     testEnvironment: 'node',
     testMatch: ['**/*.test.ts'],
-    // SCAFFOLDING - Task 2 only. Task 3 removes zip-sources, Task 4 removes the
-    // rest. The suite is incomplete until all three entries are gone.
+    // SCAFFOLDING - Task 2 only. Task 4 removes the rest. The suite is
+    // incomplete until both remaining entries are gone.
     testPathIgnorePatterns: [
         '/dist/',
         '/node_modules/',
         '__tests__/main.test.ts',
-        '__tests__/zip-sources.test.ts',
         '__tests__/characterization.test.ts'
     ],
     transform: {
