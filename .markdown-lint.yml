@@ -1,14 +1,32 @@
+# See: https://github.com/DavidAnson/markdownlint
+#
+# Several rules below exist only to keep markdownlint and Prettier from
+# demanding opposite things. Prettier is the formatter of record here - it runs
+# in `npm run format:write` and is checked by `npm run format:check` - so where
+# the two overlap, this file follows Prettier.
+
 # Unordered list style
 MD004:
     style: dash
 
-# Ordered list item prefix
-MD029:
-    style: one
-
 # Unordered list indentation
-# Prettier owns formatting here, and .prettierrc.yml sets tabWidth: 4, so it
-# normalizes nested list items to 4 spaces. MD007 defaults to 2, which would
-# make `npm run format:write` and this linter demand opposite things.
+# .prettierrc.yml sets tabWidth: 4, so Prettier normalizes nested list items to
+# 4 spaces. MD007 defaults to 2.
 MD007:
     indent: 4
+
+# Line length
+# .prettierrc.yml sets printWidth: 120 with proseWrap: always, so Prettier
+# rewraps prose at 120. The upstream template pins this rule to its own
+# printWidth of 80; 120 is the same idea at this repo's width. Tables are
+# exempt because Prettier pads them to align columns and will not rewrap them.
+MD013:
+    line_length: 120
+    tables: false
+
+# Ordered list item prefix
+# The ADRs number their steps sequentially, and the surrounding prose refers to
+# them by number. Prettier preserves sequential numbering, so "ordered" matches
+# what is actually written.
+MD029:
+    style: ordered

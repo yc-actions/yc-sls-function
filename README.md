@@ -2,7 +2,7 @@
 
 The action finds or creates Serverless Function in the given folder in Yandex Cloud and deploys new version.
 
-**Table of Contents**
+## Table of Contents
 
 <!-- toc -->
 
@@ -56,11 +56,13 @@ You can specify Lockbox secrets for your function using the `secrets` input. The
 - You can now use `latest` as the `<version-id>` to automatically use the most recent version of the secret at deploy
   time.
 - Example:
+
     ```yaml
     secrets: |
         DB_PASSWORD=lockbox-secret-id/latest/password
         API_KEY=lockbox-secret-id/abcdef123456/api_key
     ```
+
     In this example, `DB_PASSWORD` will always use the latest version of the secret, while `API_KEY` uses a specific
     version.
 
