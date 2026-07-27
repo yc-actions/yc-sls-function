@@ -1,43 +1,42 @@
-// eslint-disable-next-line import/no-namespace
-import * as core from '@actions/core'
-
-import { run } from '../src/main'
-
-import { context } from '@actions/github'
-import axios from 'axios'
-import { Function } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function'
+import { jest } from '@jest/globals'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { ServiceAccount } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/iam/v1/service_account'
-import fs from 'fs'
-import os from 'os'
-import path from 'path'
-import { __setServiceAccountList, ServiceAccountServiceMock } from './__mocks__/@yandex-cloud/nodejs-sdk/iam-v1'
+import { Function } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function'
+import { Version_Status } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/lockbox/v1/secret'
+
+import * as core from '../__fixtures__/core.js'
+import * as github from '../__fixtures__/github.js'
+import * as axios from '../__fixtures__/axios.js'
+import * as storage from '../__fixtures__/storage.js'
+import * as sdk from '../__fixtures__/yandex-sdk/index.js'
+import {
+    __setServiceAccountList,
+    ServiceAccountServiceMock,
+    serviceAccountService
+} from '../__fixtures__/yandex-sdk/iam-v1.js'
 import {
     __setCreateFunctionFail,
     __setCreateVersionFail,
     __setFunctionList,
     __setVersionList,
-    FunctionServiceMock
-} from './__mocks__/@yandex-cloud/nodejs-sdk/serverless-functions-v1'
-import { __setLockboxVersions } from './__mocks__/@yandex-cloud/nodejs-sdk/lockbox-v1'
-import { Version_Status } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/lockbox/v1/secret'
-import { writeSummary } from '../src/summary'
+    FunctionServiceMock,
+    functionService
+} from '../__fixtures__/yandex-sdk/serverless-functions-v1.js'
+import { __setLockboxVersions, secretService } from '../__fixtures__/yandex-sdk/lockbox-v1.js'
 
-jest.mock('../src/storage')
+jest.unstable_mockModule('@actions/core', () => core)
+jest.unstable_mockModule('@actions/github', () => github)
+jest.unstable_mockModule('axios', () => axios)
+jest.unstable_mockModule('@yandex-cloud/nodejs-sdk', () => sdk)
+jest.unstable_mockModule('@yandex-cloud/nodejs-sdk/iam-v1', () => ({ serviceAccountService }))
+jest.unstable_mockModule('@yandex-cloud/nodejs-sdk/lockbox-v1', () => ({ secretService }))
+jest.unstable_mockModule('@yandex-cloud/nodejs-sdk/serverless-functions-v1', () => ({ functionService }))
+jest.unstable_mockModule('../src/storage/index.js', () => storage)
 
-// Mock the GitHub Actions core library
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-let errorMock: jest.SpyInstance
-let getInputMock: jest.SpyInstance
-let getMultipleInputMock: jest.SpyInstance
-let getBooleanInputMock: jest.SpyInstance
-let setFailedMock: jest.SpyInstance
-let setOutputMock: jest.SpyInstance
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-let getIdTokenMock: jest.SpyInstance
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-let axiosPostMock: jest.SpyInstance
-
-// yandex sdk mock
+const { run } = await import('../src/main.js')
+const { writeSummary } = await import('../src/summary.js')
 
 const requiredInputs: Record<string, string> = {
     'folder-id': 'folderid',
@@ -92,7 +91,7 @@ const asyncInputs: Record<string, string> = {
 const ycSaJsonCredentials: Record<string, string> = {
     'yc-sa-json-credentials': `{
     "id": "id",
-    "created_at": "2021-01-01T00:00:00Z", 
+    "created_at": "2021-01-01T00:00:00Z",
     "key_algorithm": "RSA_2048",
     "service_account_id": "service_account_id",
     "private_key": "private_key",
@@ -109,29 +108,6 @@ describe('action', () => {
         fs.writeFileSync(tmpSummaryFile, '', { flag: 'w' }) // Ensure file exists and is writable
         jest.clearAllMocks()
 
-        errorMock = jest.spyOn(core, 'error').mockImplementation()
-        getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
-        getMultipleInputMock = jest.spyOn(core, 'getMultilineInput').mockImplementation()
-        getBooleanInputMock = jest.spyOn(core, 'getBooleanInput').mockImplementation()
-        setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
-        setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
-        getIdTokenMock = jest.spyOn(core, 'getIDToken').mockImplementation(async () => {
-            return 'github-token'
-        })
-        axiosPostMock = jest.spyOn(axios, 'post').mockImplementation(async () => {
-            return {
-                status: 200,
-                data: {
-                    access_token: 'iam-token'
-                }
-            }
-        })
-        jest.spyOn(context, 'repo', 'get').mockImplementation(() => {
-            return {
-                owner: 'some-owner',
-                repo: 'some-repo'
-            }
-        })
         __setServiceAccountList([
             ServiceAccount.fromJSON({
                 id: 'serviceaccountid'
@@ -157,10 +133,10 @@ describe('action', () => {
 
         await run()
 
-        expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
-        expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
-        expect(setOutputMock).toHaveBeenCalledWith('time', expect.any(String))
-        expect(setFailedMock).not.toHaveBeenCalled()
+        expect(core.setOutput).toHaveBeenCalledWith('function-id', 'functionid')
+        expect(core.setOutput).toHaveBeenCalledWith('version-id', 'versionid')
+        expect(core.setOutput).toHaveBeenCalledWith('time', expect.any(String))
+        expect(core.setFailed).not.toHaveBeenCalled()
     })
 
     it('should run with all inputs', async () => {
@@ -168,10 +144,10 @@ describe('action', () => {
 
         await run()
 
-        expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
-        expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
-        expect(setOutputMock).toHaveBeenCalledWith('time', expect.any(String))
-        expect(setFailedMock).not.toHaveBeenCalled()
+        expect(core.setOutput).toHaveBeenCalledWith('function-id', 'functionid')
+        expect(core.setOutput).toHaveBeenCalledWith('version-id', 'versionid')
+        expect(core.setOutput).toHaveBeenCalledWith('time', expect.any(String))
+        expect(core.setFailed).not.toHaveBeenCalled()
     })
 
     it('should run with async inputs', async () => {
@@ -179,10 +155,10 @@ describe('action', () => {
 
         await run()
 
-        expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
-        expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
-        expect(setOutputMock).toHaveBeenCalledWith('time', expect.any(String))
-        expect(setFailedMock).not.toHaveBeenCalled()
+        expect(core.setOutput).toHaveBeenCalledWith('function-id', 'functionid')
+        expect(core.setOutput).toHaveBeenCalledWith('version-id', 'versionid')
+        expect(core.setOutput).toHaveBeenCalledWith('time', expect.any(String))
+        expect(core.setFailed).not.toHaveBeenCalled()
         expect(FunctionServiceMock.createVersion).toHaveBeenCalledWith(
             expect.objectContaining({
                 asyncInvocationConfig: expect.objectContaining({
@@ -219,9 +195,9 @@ describe('action', () => {
         ])
 
         await run()
-        expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
-        expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
-        expect(setFailedMock).not.toHaveBeenCalled()
+        expect(core.setOutput).toHaveBeenCalledWith('function-id', 'functionid')
+        expect(core.setOutput).toHaveBeenCalledWith('version-id', 'versionid')
+        expect(core.setFailed).not.toHaveBeenCalled()
 
         expect(FunctionServiceMock.createVersion).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -252,9 +228,9 @@ describe('action', () => {
 
         await run()
 
-        expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
-        expect(setOutputMock).toHaveBeenCalledWith('time', expect.any(String))
-        expect(setFailedMock).not.toHaveBeenCalled()
+        expect(core.setOutput).toHaveBeenCalledWith('version-id', 'versionid')
+        expect(core.setOutput).toHaveBeenCalledWith('time', expect.any(String))
+        expect(core.setFailed).not.toHaveBeenCalled()
         expect(FunctionServiceMock.create).not.toHaveBeenCalled()
     })
 
@@ -269,10 +245,10 @@ describe('action', () => {
 
         await run()
 
-        expect(setOutputMock).toHaveBeenCalledWith('function-id', 'functionid')
-        expect(setOutputMock).toHaveBeenCalledWith('version-id', 'versionid')
-        expect(setOutputMock).toHaveBeenCalledWith('time', expect.any(String))
-        expect(setFailedMock).not.toHaveBeenCalled()
+        expect(core.setOutput).toHaveBeenCalledWith('function-id', 'functionid')
+        expect(core.setOutput).toHaveBeenCalledWith('version-id', 'versionid')
+        expect(core.setOutput).toHaveBeenCalledWith('time', expect.any(String))
+        expect(core.setFailed).not.toHaveBeenCalled()
         expect(FunctionServiceMock.createVersion).toHaveBeenCalledWith(
             expect.objectContaining({
                 serviceAccountId: 'serviceaccountid'
@@ -340,27 +316,16 @@ describe('action', () => {
 })
 
 describe('writeSummary', () => {
-    let addHeadingMock: jest.Mock
-    let addListMock: jest.Mock
-    let writeMock: jest.Mock
     let tmpSummaryFile: string
     beforeEach(() => {
         // Set GITHUB_STEP_SUMMARY to a temp file
         tmpSummaryFile = path.join(os.tmpdir(), `gh-summary-${Date.now()}`)
         process.env.GITHUB_STEP_SUMMARY = tmpSummaryFile
         fs.writeFileSync(tmpSummaryFile, '', { flag: 'w' }) // Ensure file exists and is writable
-        addHeadingMock = jest.fn().mockReturnThis()
-        addListMock = jest.fn().mockReturnThis()
-        writeMock = jest.fn().mockResolvedValue(undefined)
-        jest.spyOn(core, 'summary', 'get').mockReturnValue({
-            addHeading: addHeadingMock,
-            addList: addListMock,
-            write: writeMock
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any)
+        jest.clearAllMocks()
     })
     afterEach(() => {
-        jest.restoreAllMocks()
+        jest.clearAllMocks()
         if (tmpSummaryFile && fs.existsSync(tmpSummaryFile)) {
             fs.unlinkSync(tmpSummaryFile)
         }
@@ -376,8 +341,8 @@ describe('writeSummary', () => {
             errorMessage: undefined,
             folderId: 'folderid'
         })
-        expect(addHeadingMock).toHaveBeenCalledWith('Yandex Cloud Function Deployment Summary', 2)
-        expect(addListMock).toHaveBeenCalledWith([
+        expect(core.addHeading).toHaveBeenCalledWith('Yandex Cloud Function Deployment Summary', 2)
+        expect(core.addList).toHaveBeenCalledWith([
             'Function Name: fn',
             'Function ID: <a href="https://console.yandex.cloud/folders/folderid/functions/functions/id/overview">id</a>',
             'Version ID: vid',
@@ -385,7 +350,7 @@ describe('writeSummary', () => {
             'Bucket Object: obj',
             '✅ Success'
         ])
-        expect(writeMock).toHaveBeenCalled()
+        expect(core.write).toHaveBeenCalled()
     })
     it('writes only meaningful fields', async () => {
         await writeSummary({
@@ -394,12 +359,12 @@ describe('writeSummary', () => {
             folderId: 'folderid',
             errorMessage: undefined
         })
-        expect(addListMock).toHaveBeenCalledWith([
+        expect(core.addList).toHaveBeenCalledWith([
             'Function Name: fn',
             'Function ID: <a href="https://console.yandex.cloud/folders/folderid/functions/functions/id/overview">id</a>',
             '✅ Success'
         ])
-        expect(writeMock).toHaveBeenCalled()
+        expect(core.write).toHaveBeenCalled()
     })
     it('writes error if present', async () => {
         await writeSummary({
@@ -408,28 +373,22 @@ describe('writeSummary', () => {
             folderId: 'folderid',
             errorMessage: 'fail'
         })
-        expect(addListMock).toHaveBeenCalledWith([
+        expect(core.addList).toHaveBeenCalledWith([
             'Function Name: fn',
             'Function ID: <a href="https://console.yandex.cloud/folders/folderid/functions/functions/id/overview">id</a>',
             '❌ Error: fail'
         ])
-        expect(writeMock).toHaveBeenCalled()
+        expect(core.write).toHaveBeenCalled()
     })
     it('writes only success if no other fields', async () => {
         await writeSummary({})
-        expect(addListMock).toHaveBeenCalledWith(['✅ Success'])
-        expect(writeMock).toHaveBeenCalled()
+        expect(core.addList).toHaveBeenCalledWith(['✅ Success'])
+        expect(core.write).toHaveBeenCalled()
     })
 })
 
 function setupMockInputs(inputs: Record<string, string>) {
-    getInputMock.mockImplementation((name: string) => {
-        return inputs[name] || ''
-    })
-    getBooleanInputMock.mockImplementation((name: string) => {
-        return inputs[name] === 'true'
-    })
-    getMultipleInputMock.mockImplementation((name: string) => {
-        return inputs[name] ? inputs[name].split('\n') : []
-    })
+    core.getInput.mockImplementation((name: string) => inputs[name] || '')
+    core.getBooleanInput.mockImplementation((name: string) => inputs[name] === 'true')
+    core.getMultilineInput.mockImplementation((name: string) => (inputs[name] ? inputs[name].split('\n') : []))
 }

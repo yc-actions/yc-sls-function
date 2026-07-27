@@ -5,29 +5,45 @@
  * and snapshots it. The snapshot is captured on the pre-rewrite code and must be
  * reproduced byte-identically by the rewritten code.
  */
-// eslint-disable-next-line import/no-namespace
-import * as core from '@actions/core'
-import { context } from '@actions/github'
-import axios from 'axios'
+import { jest } from '@jest/globals'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { ServiceAccount } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/iam/v1/service_account'
+import { Function } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function'
 import { Version_Status } from '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/lockbox/v1/secret'
 
-import { run } from '../src/main'
-import { normalize } from '../__fixtures__/normalize-request'
-import { __setServiceAccountList, ServiceAccountServiceMock } from './__mocks__/@yandex-cloud/nodejs-sdk/iam-v1'
+import { normalize } from '../__fixtures__/normalize-request.js'
+import * as core from '../__fixtures__/core.js'
+import * as github from '../__fixtures__/github.js'
+import * as axios from '../__fixtures__/axios.js'
+import * as storage from '../__fixtures__/storage.js'
+import * as sdk from '../__fixtures__/yandex-sdk/index.js'
+import {
+    __setServiceAccountList,
+    ServiceAccountServiceMock,
+    serviceAccountService
+} from '../__fixtures__/yandex-sdk/iam-v1.js'
 import {
     __setCreateFunctionFail,
     __setCreateVersionFail,
     __setFunctionList,
     __setVersionList,
-    FunctionServiceMock
-} from './__mocks__/@yandex-cloud/nodejs-sdk/serverless-functions-v1'
-import { __setLockboxVersions } from './__mocks__/@yandex-cloud/nodejs-sdk/lockbox-v1'
+    FunctionServiceMock,
+    functionService
+} from '../__fixtures__/yandex-sdk/serverless-functions-v1.js'
+import { __setLockboxVersions, secretService } from '../__fixtures__/yandex-sdk/lockbox-v1.js'
 
-jest.mock('../src/storage')
+jest.unstable_mockModule('@actions/core', () => core)
+jest.unstable_mockModule('@actions/github', () => github)
+jest.unstable_mockModule('axios', () => axios)
+jest.unstable_mockModule('@yandex-cloud/nodejs-sdk', () => sdk)
+jest.unstable_mockModule('@yandex-cloud/nodejs-sdk/iam-v1', () => ({ serviceAccountService }))
+jest.unstable_mockModule('@yandex-cloud/nodejs-sdk/lockbox-v1', () => ({ secretService }))
+jest.unstable_mockModule('@yandex-cloud/nodejs-sdk/serverless-functions-v1', () => ({ functionService }))
+jest.unstable_mockModule('../src/storage/index.js', () => storage)
+
+const { run } = await import('../src/main.js')
 
 const SA_JSON = `{
     "id": "id",
@@ -157,11 +173,7 @@ const SCENARIOS: Array<{ name: string; inputs: Record<string, string>; setup?: (
         inputs: { ...REQUIRED, 'yc-sa-json-credentials': SA_JSON },
         setup: () =>
             __setFunctionList([
-                (
-                    jest.requireActual(
-                        '@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function'
-                    ) as typeof import('@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function')
-                ).Function.fromJSON({
+                Function.fromJSON({
                     id: 'functionid',
                     name: 'my-function',
                     folder_id: 'folderid',
@@ -192,18 +204,6 @@ describe('characterization', () => {
         process.env.GITHUB_SHA = 'sha'
 
         jest.clearAllMocks()
-        jest.spyOn(core, 'error').mockImplementation()
-        jest.spyOn(core, 'setFailed').mockImplementation()
-        jest.spyOn(core, 'setOutput').mockImplementation()
-        jest.spyOn(core, 'getIDToken').mockImplementation(async () => 'github-token')
-        jest.spyOn(axios, 'post').mockImplementation(async () => ({
-            status: 200,
-            data: { access_token: 'iam-token' }
-        }))
-        jest.spyOn(context, 'repo', 'get').mockImplementation(() => ({
-            owner: 'some-owner',
-            repo: 'some-repo'
-        }))
 
         __setServiceAccountList([ServiceAccount.fromJSON({ id: 'serviceaccountid' })])
         __setFunctionList([])
@@ -214,7 +214,7 @@ describe('characterization', () => {
     })
 
     afterEach(() => {
-        jest.restoreAllMocks()
+        jest.clearAllMocks()
         if (tmpSummaryFile && fs.existsSync(tmpSummaryFile)) {
             fs.unlinkSync(tmpSummaryFile)
         }
@@ -223,9 +223,9 @@ describe('characterization', () => {
 
     for (const scenario of SCENARIOS) {
         it(`records SDK requests: ${scenario.name}`, async () => {
-            jest.spyOn(core, 'getInput').mockImplementation((name: string) => scenario.inputs[name] || '')
-            jest.spyOn(core, 'getBooleanInput').mockImplementation((name: string) => scenario.inputs[name] === 'true')
-            jest.spyOn(core, 'getMultilineInput').mockImplementation((name: string) =>
+            core.getInput.mockImplementation((name: string) => scenario.inputs[name] || '')
+            core.getBooleanInput.mockImplementation((name: string) => scenario.inputs[name] === 'true')
+            core.getMultilineInput.mockImplementation((name: string) =>
                 scenario.inputs[name] ? scenario.inputs[name].split('\n') : []
             )
             scenario.setup?.()

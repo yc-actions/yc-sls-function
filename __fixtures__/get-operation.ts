@@ -20,7 +20,7 @@ export function getOperation<P, M>(
         },
         metadata: metadataClass
             ? {
-                  value: Buffer.from(metadataClass?.encode(metadataClass?.fromJSON(metadata ?? {})).finish()).toString(
+                  value: Buffer.from(metadataClass.encode(metadataClass.fromJSON(metadata ?? {})).finish()).toString(
                       'base64'
                   )
               }
