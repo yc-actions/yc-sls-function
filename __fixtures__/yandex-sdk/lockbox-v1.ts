@@ -6,6 +6,7 @@ let folderSecrets: LockboxSecret[] = []
 let getSecretFails = false
 let unknownSecretIds = new Set<string>()
 let listPageSize = 0
+let listFailure = ''
 
 export const LockboxSecretServiceMock = {
     get: jest.fn(({ secretId }: { secretId: string }) => {
@@ -18,6 +19,10 @@ export const LockboxSecretServiceMock = {
         return { currentVersion: sorted[0] || undefined }
     }),
     list: jest.fn(({ pageToken }: { pageToken: string }) => {
+        // Lockbox denies List without lockbox.viewer on the folder.
+        if (listFailure) {
+            throw new Error(listFailure)
+        }
         // Page tokens are plain offsets - enough to exercise the pagination loop.
         const offset = pageToken ? Number(pageToken) : 0
         const size = listPageSize || folderSecrets.length
@@ -52,6 +57,11 @@ export function __setUnknownSecretIds(value: string[]): void {
 /** Caps List page size so tests can cover the nextPageToken loop. 0 means one page. */
 export function __setListPageSize(value: number): void {
     listPageSize = value
+}
+
+/** Makes SecretService.List throw with this message. Empty string means it succeeds. */
+export function __setListFailure(message: string): void {
+    listFailure = message
 }
 
 export const secretService = {

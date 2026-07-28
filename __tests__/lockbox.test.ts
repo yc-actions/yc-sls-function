@@ -6,6 +6,7 @@ import * as core from '../__fixtures__/core.js'
 import * as sdk from '../__fixtures__/yandex-sdk/index.js'
 import {
     __setGetSecretFail,
+    __setListFailure,
     __setListPageSize,
     __setLockboxVersions,
     __setSecretList,
@@ -69,6 +70,7 @@ describe('resolveLatestLockboxVersions', () => {
         __setSecretList([])
         __setLockboxVersions([])
         __setListPageSize(0)
+        __setListFailure('')
         session = new Session({})
     })
 
@@ -122,6 +124,8 @@ describe('resolveLatestLockboxVersions', () => {
         const resolved = await resolveLatestLockboxVersions(session, 'folderid', secrets)
 
         expect(resolved.map(s => s.versionId)).toEqual(['version999', 'version999'])
+        // One secret, one lookup - keys referencing the same secret share it.
+        expect(LockboxSecretServiceMock.get).toHaveBeenCalledTimes(1)
     })
 
     it('falls back to name lookup and rewrites the id when get fails', async () => {
@@ -150,6 +154,23 @@ describe('resolveLatestLockboxVersions', () => {
 
         expect(resolved).toEqual([{ environmentVariable: 'ENV1', id: 'id-c', versionId: 'version-c', key: 'key1' }])
         expect(LockboxSecretServiceMock.list).toHaveBeenCalledTimes(3)
+    })
+
+    it('stops paging once every wanted name is found', async () => {
+        __setGetSecretFail(true)
+        __setListPageSize(1)
+        __setSecretList([
+            lockboxSecret('id-a', 'secret-a', 'version-a'),
+            lockboxSecret('id-b', 'secret-b', 'version-b'),
+            lockboxSecret('id-c', 'secret-c', 'version-c')
+        ])
+        const secrets: Secret[] = [{ environmentVariable: 'ENV1', id: 'secret-a', versionId: 'latest', key: 'key1' }]
+
+        const resolved = await resolveLatestLockboxVersions(session, 'folderid', secrets)
+
+        expect(resolved).toEqual([{ environmentVariable: 'ENV1', id: 'id-a', versionId: 'version-a', key: 'key1' }])
+        // The match is on the first page, so the remaining pages are never fetched.
+        expect(LockboxSecretServiceMock.list).toHaveBeenCalledTimes(1)
     })
 
     it('mixes id-resolved and name-resolved references in one run', async () => {
@@ -215,7 +236,38 @@ describe('resolveLatestLockboxVersions', () => {
         ]
 
         await expect(resolveLatestLockboxVersions(session, 'folderid', secrets)).rejects.toThrow(
-            'Failed to resolve latest versions for secrets: Failed to resolve secret: missing-1, Failed to resolve secret: missing-2'
+            'Failed to resolve latest versions for secrets: ' +
+                'secret "missing-1" is not a known id (Secret not found) and no secret with that name exists in folder folderid; ' +
+                'secret "missing-2" is not a known id (Secret not found) and no secret with that name exists in folder folderid'
+        )
+    })
+
+    it('keeps the id lookup failure in the message when the name lookup finds nothing', async () => {
+        // A transient Get failure looks exactly like a name to the first stage - the
+        // reported error has to carry why the id lookup failed, or it misdirects.
+        __setGetSecretFail(true)
+        __setSecretList([])
+        const secrets: Secret[] = [
+            { environmentVariable: 'ENV1', id: 'maybe-a-name', versionId: 'latest', key: 'key1' }
+        ]
+
+        await expect(resolveLatestLockboxVersions(session, 'folderid', secrets)).rejects.toThrow(
+            'secret "maybe-a-name" is not a known id (Secret not found) and no secret with that name exists in folder folderid'
+        )
+    })
+
+    it('explains which role is missing when the folder listing is denied', async () => {
+        __setGetSecretFail(true)
+        __setListFailure('Permission denied')
+        const secrets: Secret[] = [
+            { environmentVariable: 'ENV1', id: 'my-secret', versionId: 'latest', key: 'key1' },
+            { environmentVariable: 'ENV2', id: 'other-secret', versionId: 'latest', key: 'key2' }
+        ]
+
+        await expect(resolveLatestLockboxVersions(session, 'folderid', secrets)).rejects.toThrow(
+            'Failed to list secrets in folder folderid while resolving 2 secret(s) by name: Permission denied. ' +
+                'Grant lockbox.viewer on the folder to the credentials the action authenticates with, ' +
+                'or reference the secrets by id.'
         )
     })
 

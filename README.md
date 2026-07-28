@@ -83,10 +83,11 @@ The action first tries the value as a secret ID. Only if that lookup fails does 
 match by name, so ID-based workflows are unaffected and pay no extra API call.
 
 Only `latest` references can use a name. A reference pinned to an explicit version ID is passed straight to the API and
-must use the secret ID.
+must use the secret ID. A name is looked up only in `folder-id`; a secret in another folder must be referenced by ID.
 
-> **Note:** Name lookup requires the `lockbox.viewer` role on the folder, in addition to `lockbox.payloadViewer`. See
-> [Runtime permissions](#runtime-permissions).
+> **Note:** Resolution happens at deploy time, so the name lookup needs the `lockbox.viewer` role on `folder-id` for the
+> credentials the action itself authenticates with (`yc-sa-json-credentials`, `yc-iam-token` or `yc-sa-id`) — not for
+> the function's `service-account`. See [Deploy time permissions](#deploy-time-permissions).
 
 ### Mounts Input Syntax
 
@@ -211,18 +212,18 @@ Additionally, you may need to grant the following optional roles depending on yo
 | `iam.serviceAccounts.user` | Providing the service account ID in parameters, ensuring access to the service account |
 | `vpc.user`                 | Deploying the function in a VPC with a specified network ID                            |
 | `functions.admin`          | Making the function public                                                             |
+| `lockbox.viewer`           | Resolving `latest` secret versions, and referencing a secret by name instead of by ID  |
 
 ### Runtime permissions
 
 The service account provided to function via `service-account` parameter must have the following roles:
 
-| Required Role                 | Required For                                                                               |
-| ----------------------------- | ------------------------------------------------------------------------------------------ |
-| `lockbox.payloadViewer`       | To access the Lockbox secrets by ID.                                                       |
-| `lockbox.viewer`              | To list the folder's secrets. Only needed if you reference a secret by name instead of ID. |
-| `kms.keys.encrypterDecrypter` | To decrypt the Lockbox secrets, if they are encrypted with KMS key.                        |
-| `storage.viewer`              | To mount a bucket in read-only mode (`:ro` in mounts input).                               |
-| `storage.uploader`            | To mount a bucket in read-write mode (default, or no `:ro`).                               |
+| Required Role                 | Required For                                                        |
+| ----------------------------- | ------------------------------------------------------------------- |
+| `lockbox.payloadViewer`       | To access the Lockbox secrets.                                      |
+| `kms.keys.encrypterDecrypter` | To decrypt the Lockbox secrets, if they are encrypted with KMS key. |
+| `storage.viewer`              | To mount a bucket in read-only mode (`:ro` in mounts input).        |
+| `storage.uploader`            | To mount a bucket in read-write mode (default, or no `:ro`).        |
 
 ## Development
 

@@ -21,8 +21,10 @@ mechanism that accepts either an ID or a name in the same position.
 
 - Names and IDs are not distinguishable by shape. Yandex Cloud does not guarantee an ID format the action can pattern
   match on, so the action cannot decide up front which kind of reference it was given.
-- Listing secrets requires `lockbox.viewer`; reading one by ID requires only `lockbox.payloadViewer`. Requiring the
-  broader role unconditionally would be a breaking change for existing users.
+- Resolution runs at deploy time, so both `Get` and `List` are issued by the credentials the action authenticates with
+  (`yc-sa-json-credentials`, `yc-iam-token` or `yc-sa-id`) — not by the function's runtime `service-account`.
+- Listing secrets requires `lockbox.viewer` on the folder, which is broader than the per-secret access an ID lookup
+  needs. Requiring it unconditionally would be a breaking change for existing users.
 - Secret names are unique within a folder, so a folder listing is enough to resolve a name.
 - Only references using `latest` are resolved by the action; a reference pinned to an explicit version is passed to the
   API untouched and therefore cannot use a name.
@@ -31,29 +33,36 @@ mechanism that accepts either an ID or a name in the same position.
 
 `resolveLatestLockboxVersions` in `src/lockbox.ts` resolves in two stages.
 
-1. **ID lookup (primary).** Every reference with `versionId === 'latest'` is looked up with `SecretService.Get`, at most
-   five calls in flight. A successful lookup yields the current version ID. A rejected lookup is not treated as an error
-   — the reference is marked `fallback`, because the value may be a name.
-2. **Name lookup (fallback).** Only if at least one reference fell back, the folder is listed once with
-   `SecretService.List`, paging through `nextPageToken`, and indexed by secret name. Each fallback reference is matched
-   against that index; a match rewrites both the secret ID and the version ID.
+References are first grouped by their `<secret-id>` value, so a secret read by several environment variables costs one
+lookup and yields one outcome. Both stages then work per distinct reference.
+
+1. **ID lookup (primary).** Every distinct reference among the `versionId === 'latest'` entries is looked up with
+   `SecretService.Get`, at most five calls in flight. A successful lookup yields the current version ID. A rejected
+   lookup is not treated as an error — the reference is marked `unknown`, because the value may be a name.
+2. **Name lookup (fallback).** Only if at least one reference is `unknown`, the folder is listed with
+   `SecretService.List`, paging through `nextPageToken` until every wanted name is found or the folder is exhausted.
+   Each `unknown` reference is matched against that index; a match rewrites both the secret ID and the version ID.
 
 A reference that survives both stages unresolved is neither a readable ID nor a name in the folder, and is reported as
 an error.
 
-### Resolution result
+### Lookup result
 
-Each reference carries a tagged result through the two stages:
+Each distinct reference carries a tagged result out of stage one:
 
 ```typescript
-type ResolutionResult =
-    | { status: 'success'; secret: Secret } // resolved, ID and version final
-    | { status: 'fallback'; original: Secret } // Get failed, try name lookup
-    | { status: 'error'; error: Error } // resolved but unusable
+type IdLookup =
+    | { status: 'found'; versionId: string } // resolved, version final
+    | { status: 'no-version' } // real secret, but nothing to deploy
+    | { status: 'unknown'; cause: string } // Get failed, try name lookup
 ```
 
-`fallback` is what makes the second stage conditional: no fallbacks means no `List` call and no `lockbox.viewer`
+`unknown` is what makes the second stage conditional: no unknown references means no `List` call and no `lockbox.viewer`
 requirement.
+
+`cause` carries the message Lockbox rejected the ID with. Stage one cannot tell "this is a name" from "the API was
+briefly unavailable", so the reason has to survive into the final error — otherwise a transient failure is reported as a
+nonexistent secret and sends the user looking in the wrong place.
 
 ### Why not detect names up front
 
@@ -75,47 +84,65 @@ extra runtime dependency.
 
 ## IAM Permission Requirements
 
-| Role                    | Grants                      | Needed when                              |
-| ----------------------- | --------------------------- | ---------------------------------------- |
-| `lockbox.payloadViewer` | Read a secret payload by ID | Always                                   |
-| `lockbox.viewer`        | List secrets in a folder    | Only when a secret is referenced by name |
+Two different identities are involved, and conflating them is the easiest way to misconfigure this feature:
 
-Existing ID-based workflows keep working with `lockbox.payloadViewer` alone. A workflow that references any secret by
-name must additionally grant `lockbox.viewer` on the folder.
+| Identity                                                                    | Role                    | Needed when                                         |
+| --------------------------------------------------------------------------- | ----------------------- | --------------------------------------------------- |
+| Deploy credentials (`yc-sa-json-credentials` / `yc-iam-token` / `yc-sa-id`) | `lockbox.viewer`        | Resolving `latest`, and any reference given by name |
+| Function `service-account`                                                  | `lockbox.payloadViewer` | Always — the function reads the payload at run time |
+
+The name lookup adds `lockbox.viewer` on the folder for the **deploy** credentials only. Granting it to the function's
+runtime service account has no effect on resolution. Existing ID-based workflows are unaffected: they issue the same
+`Get` calls as before and never reach `List`.
 
 ## Error Handling
 
-Failures from both stages are collected and thrown together:
+Per-reference failures from both stages are collected and thrown together, one message per secret:
 
 ```txt
-Failed to resolve latest versions for secrets: <message>, <message>
+Failed to resolve latest versions for secrets: <message>; <message>
 ```
 
 The individual messages are:
 
-- `Failed to resolve secret: <reference>` — neither a readable ID nor a name in the folder.
+- `secret "<reference>" is not a known id (<cause>) and no secret with that name exists in folder <folderId>` — neither
+  a readable ID nor a name in the folder. `<cause>` is why the ID lookup failed.
 - `Secret <id> has no current version` — found by ID, but the secret has no versions.
 - `Secret <reference> (found as <id>) has no current version` — found by name, but the secret has no versions.
 
 Reporting all failures at once matters here: a workflow typically declares several secrets, and fixing them one
 deployment at a time is slow.
 
+A failing `List` is different: it is not attributable to one reference, and it has one likely cause, so it throws on its
+own with the fix in the message:
+
+```txt
+Failed to list secrets in folder <folderId> while resolving <n> secret(s) by name: <cause>. Grant lockbox.viewer on the
+folder to the credentials the action authenticates with, or reference the secrets by id.
+```
+
+This path is reached by anyone who merely mistypes a secret ID, so naming the missing role — and the identity that needs
+it — is what keeps a typo from reading as a permissions problem.
+
 ## Testing
 
 `__tests__/lockbox.test.ts` covers the resolution logic against the SDK mock in `__fixtures__/yandex-sdk/lockbox-v1.ts`:
 
 - Passthrough when no reference uses `latest` — asserts neither `Get` nor `List` is called.
-- Resolution by ID, including several references to the same secret.
+- Resolution by ID, including one secret read by several keys — asserts a single `Get`.
 - Order preservation across a mix of `latest` and pinned references.
 - Fallback to name, including the ID rewrite.
-- Paging through `nextPageToken` during the folder listing.
+- Paging through `nextPageToken` during the folder listing, and stopping early once every name is found.
 - A single run mixing an ID-resolved and a name-resolved reference.
 - One `List` call for a batch of fallbacks.
 - Both "no current version" errors, and the combined message for several unresolvable references.
+- The ID lookup failure surviving into the final message when the name lookup finds nothing.
+- A denied folder listing naming `lockbox.viewer` as the fix.
 - More references than the concurrency limit.
 
-The mock gained `__setSecretList`, `__setGetSecretFail`, `__setUnknownSecretIds` and `__setListPageSize` to drive these
-paths. `__setUnknownSecretIds` makes `Get` fail for named ids only, which is what exercises the mixed case.
+The mock gained `__setSecretList`, `__setGetSecretFail`, `__setUnknownSecretIds`, `__setListPageSize` and
+`__setListFailure` to drive these paths. `__setUnknownSecretIds` makes `Get` fail for named ids only, which is what
+exercises the mixed case.
 
 ## Consequences
 
@@ -124,17 +151,21 @@ paths. `__setUnknownSecretIds` makes `Get` fail for named ids only, which is wha
 - Workflows can reference secrets by name, and survive a secret being recreated.
 - No change for existing users: same input format, same IAM roles, same API calls.
 - The folder listing is lazy, so the cost is paid only by workflows that use names.
+- Grouping by reference means a secret read by several environment variables costs one `Get`, not one per key — fewer
+  calls than before this change for a common input shape.
 
 ### Negative
 
-- Name-based references require the broader `lockbox.viewer` role.
-- Each name-based reference costs one rejected `Get` before the listing.
-- A typo in a secret ID now produces "failed to resolve" only after the folder listing, rather than immediately.
+- Name-based references require the broader `lockbox.viewer` role for the deploy credentials.
+- Each distinct name costs one rejected `Get` before the listing.
+- A typo in a secret ID now produces "failed to resolve" only after the folder listing, rather than immediately — and if
+  the deploy credentials cannot list the folder, the reported error is about the listing rather than the typo.
 
 ### Neutral
 
 - Only `latest` references can use a name. A reference pinned to an explicit version is not resolved by the action and
   must therefore still use an ID.
+- A name is resolved only within `folder-id`. A secret in another folder is still reachable by ID.
 
 ## Related ADRs
 
