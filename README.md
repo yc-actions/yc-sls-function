@@ -68,6 +68,27 @@ You can specify Lockbox secrets for your function using the `secrets` input. The
 
 > **Note:** If `latest` is specified and no versions are found for the secret, the deployment will fail with an error.
 
+### Lockbox Secrets: Referencing a Secret by Name
+
+The `<lockbox-secret-id>` position also accepts the secret's name, so you can write a workflow that stays readable and
+survives the secret being recreated:
+
+```yaml
+secrets: |
+    DB_PASSWORD=my-database-credentials/latest/password
+    API_KEY=lockbox-secret-id/latest/api_key
+```
+
+The action first tries the value as a secret ID. Only if that lookup fails does it list the secrets in `folder-id` and
+match by name, so ID-based workflows are unaffected and pay no extra API call.
+
+Only `latest` references can use a name. A reference pinned to an explicit version ID is passed straight to the API and
+must use the secret ID. A name is looked up only in `folder-id`; a secret in another folder must be referenced by ID.
+
+> **Note:** Resolution happens at deploy time, so the name lookup needs the `lockbox.viewer` role on `folder-id` for the
+> credentials the action itself authenticates with (`yc-sa-json-credentials`, `yc-iam-token` or `yc-sa-id`) — not for
+> the function's `service-account`. See [Deploy time permissions](#deploy-time-permissions).
+
 ### Mounts Input Syntax
 
 Each line in the `mounts` input should be in the form:
@@ -191,6 +212,7 @@ Additionally, you may need to grant the following optional roles depending on yo
 | `iam.serviceAccounts.user` | Providing the service account ID in parameters, ensuring access to the service account |
 | `vpc.user`                 | Deploying the function in a VPC with a specified network ID                            |
 | `functions.admin`          | Making the function public                                                             |
+| `lockbox.viewer`           | Resolving `latest` secret versions, and referencing a secret by name instead of by ID  |
 
 ### Runtime permissions
 
