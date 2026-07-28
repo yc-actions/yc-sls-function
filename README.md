@@ -68,6 +68,26 @@ You can specify Lockbox secrets for your function using the `secrets` input. The
 
 > **Note:** If `latest` is specified and no versions are found for the secret, the deployment will fail with an error.
 
+### Lockbox Secrets: Referencing a Secret by Name
+
+The `<lockbox-secret-id>` position also accepts the secret's name, so you can write a workflow that stays readable and
+survives the secret being recreated:
+
+```yaml
+secrets: |
+    DB_PASSWORD=my-database-credentials/latest/password
+    API_KEY=lockbox-secret-id/latest/api_key
+```
+
+The action first tries the value as a secret ID. Only if that lookup fails does it list the secrets in `folder-id` and
+match by name, so ID-based workflows are unaffected and pay no extra API call.
+
+Only `latest` references can use a name. A reference pinned to an explicit version ID is passed straight to the API and
+must use the secret ID.
+
+> **Note:** Name lookup requires the `lockbox.viewer` role on the folder, in addition to `lockbox.payloadViewer`. See
+> [Runtime permissions](#runtime-permissions).
+
 ### Mounts Input Syntax
 
 Each line in the `mounts` input should be in the form:
@@ -196,12 +216,13 @@ Additionally, you may need to grant the following optional roles depending on yo
 
 The service account provided to function via `service-account` parameter must have the following roles:
 
-| Required Role                 | Required For                                                        |
-| ----------------------------- | ------------------------------------------------------------------- |
-| `lockbox.payloadViewer`       | To access the Lockbox secrets.                                      |
-| `kms.keys.encrypterDecrypter` | To decrypt the Lockbox secrets, if they are encrypted with KMS key. |
-| `storage.viewer`              | To mount a bucket in read-only mode (`:ro` in mounts input).        |
-| `storage.uploader`            | To mount a bucket in read-write mode (default, or no `:ro`).        |
+| Required Role                 | Required For                                                                               |
+| ----------------------------- | ------------------------------------------------------------------------------------------ |
+| `lockbox.payloadViewer`       | To access the Lockbox secrets by ID.                                                       |
+| `lockbox.viewer`              | To list the folder's secrets. Only needed if you reference a secret by name instead of ID. |
+| `kms.keys.encrypterDecrypter` | To decrypt the Lockbox secrets, if they are encrypted with KMS key.                        |
+| `storage.viewer`              | To mount a bucket in read-only mode (`:ro` in mounts input).                               |
+| `storage.uploader`            | To mount a bucket in read-write mode (default, or no `:ro`).                               |
 
 ## Development
 

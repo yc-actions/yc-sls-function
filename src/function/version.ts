@@ -62,7 +62,7 @@ export async function createFunctionVersion(
 
         // Parse and resolve secrets
         let secrets = parseLockboxVariables(inputs.secrets)
-        secrets = await resolveLatestLockboxVersions(session, secrets)
+        secrets = await resolveLatestLockboxVersions(session, inputs.folderId, secrets)
 
         const client = session.client(functionService.FunctionServiceClient)
         const request = CreateFunctionVersionRequest.fromJSON({
