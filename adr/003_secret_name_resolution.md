@@ -89,7 +89,7 @@ Two different identities are involved, and conflating them is the easiest way to
 | Identity                                                                    | Role                    | Needed when                                         |
 | --------------------------------------------------------------------------- | ----------------------- | --------------------------------------------------- |
 | Deploy credentials (`yc-sa-json-credentials` / `yc-iam-token` / `yc-sa-id`) | `lockbox.viewer`        | Resolving `latest`, and any reference given by name |
-| Function `service-account`                                                  | `lockbox.payloadViewer` | Always — the function reads the payload at run time |
+| Function `service-account`                                                  | `lockbox.payloadViewer` | Always — the function reads the payload at runtime  |
 
 The name lookup adds `lockbox.viewer` on the folder for the **deploy** credentials only. Granting it to the function's
 runtime service account has no effect on resolution. Existing ID-based workflows are unaffected: they issue the same
@@ -141,7 +141,7 @@ it — is what keeps a typo from reading as a permissions problem.
 - More references than the concurrency limit.
 
 The mock gained `__setSecretList`, `__setGetSecretFail`, `__setUnknownSecretIds`, `__setListPageSize` and
-`__setListFailure` to drive these paths. `__setUnknownSecretIds` makes `Get` fail for named ids only, which is what
+`__setListFailure` to drive these paths. `__setUnknownSecretIds` makes `Get` fail for named IDs only, which is what
 exercises the mixed case.
 
 ## Consequences
