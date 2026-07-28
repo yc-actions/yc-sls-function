@@ -11,6 +11,10 @@ on:
 permissions:
     contents: read
     packages: read
+    # super-linter posts its run summary as a pull request comment via the
+    # issue comments API, which needs both of these.
+    issues: write
+    pull-requests: write
     statuses: write
 
 jobs:
