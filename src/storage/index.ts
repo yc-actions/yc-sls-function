@@ -9,7 +9,8 @@
 
 import { IamTokenService } from '@yandex-cloud/nodejs-sdk/dist/token-service/iam-token-service'
 import axios from 'axios'
-import { IStorageObject, StorageObject } from './storage-object'
+import { Buffer } from 'node:buffer'
+import { IStorageObject, StorageObject } from './storage-object.js'
 import { SessionConfig } from '@yandex-cloud/nodejs-sdk/dist/types'
 
 /**
@@ -43,7 +44,6 @@ export class StorageServiceImpl implements StorageService {
     static __endpointId = 'storage'
     private readonly _address: string = 'storage.yandexcloud.net:443'
     private readonly _tokenCreator: () => Promise<string>
-    private $method_definitions: unknown
 
     /**
      * Creates storage service with authentication configuration.
@@ -58,8 +58,6 @@ export class StorageServiceImpl implements StorageService {
         } else if ('iamToken' in sessionConfig) {
             this._tokenCreator = async () => sessionConfig.iamToken
         } else throw new Error('IAMToken not implemented.')
-
-        this.$method_definitions = {}
     }
 
     /**
@@ -74,10 +72,10 @@ export class StorageServiceImpl implements StorageService {
         const res = await axios.get(this.#_url(bucketName, objectName), {
             headers: {
                 'X-YaCloud-SubjectToken': token
-            }
+            },
+            responseType: 'arraybuffer'
         })
-        const buf = await res.data()
-        return StorageObject.fromBuffer(bucketName, objectName, buf)
+        return StorageObject.fromBuffer(bucketName, objectName, Buffer.from(res.data))
     }
 
     /**

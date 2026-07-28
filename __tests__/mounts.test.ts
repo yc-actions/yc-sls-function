@@ -1,5 +1,5 @@
 import { expect, test, describe } from '@jest/globals'
-import { parseMounts } from '../src/parse'
+import { parseMounts } from '../src/parse/index.js'
 import {
     Mount,
     Mount_Mode

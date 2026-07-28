@@ -1,0 +1,18 @@
+{
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#6D4C41",
+        "titleBar.activeBackground": "#996A5B",
+        "titleBar.activeForeground": "#FBF9F8",
+        "titleBar.inactiveBackground": "#6D4C41",
+        "titleBar.inactiveForeground": "#FBF9F8",
+        "statusBar.background": "#6D4C41",
+        "statusBar.foreground": "#FBF9F8",
+        "statusBar.debuggingBackground": "#6D4C41",
+        "statusBar.debuggingForeground": "#FBF9F8",
+        "statusBar.noFolderBackground": "#6D4C41",
+        "statusBar.noFolderForeground": "#FBF9F8"
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "eslint.validate": ["javascript", "typescript"]
+}

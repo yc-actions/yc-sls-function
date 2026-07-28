@@ -1,0 +1,66 @@
+name: Lint Codebase
+
+on:
+    pull_request:
+        branches:
+            - main
+    push:
+        branches:
+            - main
+
+permissions:
+    contents: read
+    packages: read
+    statuses: write
+
+jobs:
+    lint:
+        name: Lint Codebase
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              id: checkout
+              uses: actions/checkout@v7
+              with:
+                  fetch-depth: 0
+
+            - name: Setup Node.js
+              id: setup-node
+              uses: actions/setup-node@v7
+              with:
+                  node-version-file: .node-version
+                  cache: npm
+
+            - name: Install Dependencies
+              id: install
+              run: npm ci
+
+            - name: Lint Codebase
+              id: super-linter
+              uses: super-linter/super-linter/slim@v8
+              env:
+                  DEFAULT_BRANCH: main
+                  # docs/superpowers/ is excluded for the same reason
+                  # .prettierignore excludes it: those are design and planning
+                  # documents kept in their authored prose form. textlint's
+                  # terminology rules in particular would rewrite "README" to
+                  # "readme" and "re-export" to "reexport" in them.
+                  FILTER_REGEX_EXCLUDE: (dist/|docs/superpowers/).*
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  # This repo keeps .markdown-lint.yml and .yaml-lint.yml at the
+                  # root rather than in .github/linters/, which is where
+                  # super-linter looks by default.
+                  LINTER_RULES_PATH: .
+                  VALIDATE_ALL_CODEBASE: false
+                  # Biome's defaults (semicolons, double quotes, tabs) contradict
+                  # .prettierrc.yml, and Prettier is what `npm run format:check`
+                  # enforces. The *_PRETTIER validators below already cover
+                  # formatting, so Biome would only ever disagree with them.
+                  VALIDATE_BIOME_FORMAT: false
+                  VALIDATE_BIOME_LINT: false
+                  VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
+                  VALIDATE_JAVASCRIPT_ES: false
+                  VALIDATE_JSCPD: false
+                  VALIDATE_JSON: false
+                  VALIDATE_TYPESCRIPT_ES: false

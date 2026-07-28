@@ -1,0 +1,1037 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`characterization records SDK requests: IAM token credentials 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": undefined,
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "",
+          "subnetId": [],
+        },
+        "content": "bytes:22",
+        "description": "",
+        "entrypoint": "index.handler",
+        "environment": {},
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 5,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": false,
+          "folderId": undefined,
+          "logGroupId": "",
+          "minLevel": 0,
+        },
+        "metadataOptions": undefined,
+        "mounts": [],
+        "namedServiceAccounts": {},
+        "package": undefined,
+        "resources": {
+          "memory": 134217728,
+        },
+        "runtime": "nodejs16",
+        "secrets": [],
+        "serviceAccountId": "",
+        "storageMounts": [],
+        "tag": [],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;
+
+exports[`characterization records SDK requests: async with both ymq targets 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": {
+          "failureTarget": {
+            "emptyTarget": undefined,
+            "ymqTarget": {
+              "queueArn": "arn:aws:sqs:us-east-1:123456789012:queue-name",
+              "serviceAccountId": "failure-sa-id",
+            },
+          },
+          "retriesCount": 3,
+          "serviceAccountId": "async-sa-id",
+          "successTarget": {
+            "emptyTarget": undefined,
+            "ymqTarget": {
+              "queueArn": "arn:aws:sqs:us-east-1:123456789012:queue-name",
+              "serviceAccountId": "success-sa-id",
+            },
+          },
+        },
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "",
+          "subnetId": [],
+        },
+        "content": "bytes:22",
+        "description": "",
+        "entrypoint": "index.handler",
+        "environment": {},
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 5,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": false,
+          "folderId": undefined,
+          "logGroupId": "",
+          "minLevel": 0,
+        },
+        "metadataOptions": undefined,
+        "mounts": [],
+        "namedServiceAccounts": {},
+        "package": undefined,
+        "resources": {
+          "memory": 134217728,
+        },
+        "runtime": "nodejs16",
+        "secrets": [],
+        "serviceAccountId": "",
+        "storageMounts": [],
+        "tag": [],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;
+
+exports[`characterization records SDK requests: async with empty targets falling back to function service account 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": {
+          "failureTarget": {
+            "emptyTarget": {},
+            "ymqTarget": undefined,
+          },
+          "retriesCount": 3,
+          "serviceAccountId": "serviceaccountid",
+          "successTarget": {
+            "emptyTarget": {},
+            "ymqTarget": undefined,
+          },
+        },
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "",
+          "subnetId": [],
+        },
+        "content": "bytes:22",
+        "description": "",
+        "entrypoint": "index.handler",
+        "environment": {},
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 5,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": false,
+          "folderId": undefined,
+          "logGroupId": "",
+          "minLevel": 0,
+        },
+        "metadataOptions": undefined,
+        "mounts": [],
+        "namedServiceAccounts": {},
+        "package": undefined,
+        "resources": {
+          "memory": 134217728,
+        },
+        "runtime": "nodejs16",
+        "secrets": [],
+        "serviceAccountId": "serviceaccountid",
+        "storageMounts": [],
+        "tag": [],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;
+
+exports[`characterization records SDK requests: bucket upload 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": undefined,
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "",
+          "subnetId": [],
+        },
+        "content": undefined,
+        "description": "",
+        "entrypoint": "index.handler",
+        "environment": {},
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 5,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": false,
+          "folderId": undefined,
+          "logGroupId": "",
+          "minLevel": 0,
+        },
+        "metadataOptions": undefined,
+        "mounts": [],
+        "namedServiceAccounts": {},
+        "package": {
+          "bucketName": "some-bucket",
+          "objectName": "functionid/sha.zip",
+          "sha256": "<redacted>",
+        },
+        "resources": {
+          "memory": 134217728,
+        },
+        "runtime": "nodejs16",
+        "secrets": [],
+        "serviceAccountId": "",
+        "storageMounts": [],
+        "tag": [],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;
+
+exports[`characterization records SDK requests: environment, tags, network, description, timeout, memory 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": undefined,
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "networkid",
+          "subnetId": [],
+        },
+        "content": "bytes:22",
+        "description": "some description",
+        "entrypoint": "index.handler",
+        "environment": {
+          "FOO": "BAR",
+          "FOO2": "BAR2",
+        },
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 30,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": false,
+          "folderId": undefined,
+          "logGroupId": "",
+          "minLevel": 0,
+        },
+        "metadataOptions": undefined,
+        "mounts": [],
+        "namedServiceAccounts": {},
+        "package": undefined,
+        "resources": {
+          "memory": 268435456,
+        },
+        "runtime": "nodejs16",
+        "secrets": [],
+        "serviceAccountId": "serviceaccountid",
+        "storageMounts": [],
+        "tag": [
+          "tag1",
+          "tag2",
+        ],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;
+
+exports[`characterization records SDK requests: function already exists 1`] = `
+{
+  "createFunction": [],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": undefined,
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "",
+          "subnetId": [],
+        },
+        "content": "bytes:22",
+        "description": "",
+        "entrypoint": "index.handler",
+        "environment": {},
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 5,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": false,
+          "folderId": undefined,
+          "logGroupId": "",
+          "minLevel": 0,
+        },
+        "metadataOptions": undefined,
+        "mounts": [],
+        "namedServiceAccounts": {},
+        "package": undefined,
+        "resources": {
+          "memory": 134217728,
+        },
+        "runtime": "nodejs16",
+        "secrets": [],
+        "serviceAccountId": "",
+        "storageMounts": [],
+        "tag": [],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;
+
+exports[`characterization records SDK requests: function creation fails 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;
+
+exports[`characterization records SDK requests: log options 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": undefined,
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "",
+          "subnetId": [],
+        },
+        "content": "bytes:22",
+        "description": "",
+        "entrypoint": "index.handler",
+        "environment": {},
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 5,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": true,
+          "folderId": undefined,
+          "logGroupId": "logsgroupid",
+          "minLevel": 4,
+        },
+        "metadataOptions": undefined,
+        "mounts": [],
+        "namedServiceAccounts": {},
+        "package": undefined,
+        "resources": {
+          "memory": 134217728,
+        },
+        "runtime": "nodejs16",
+        "secrets": [],
+        "serviceAccountId": "",
+        "storageMounts": [],
+        "tag": [],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;
+
+exports[`characterization records SDK requests: mounts 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": undefined,
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "",
+          "subnetId": [],
+        },
+        "content": "bytes:22",
+        "description": "",
+        "entrypoint": "index.handler",
+        "environment": {},
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 5,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": false,
+          "folderId": undefined,
+          "logGroupId": "",
+          "minLevel": 0,
+        },
+        "metadataOptions": undefined,
+        "mounts": [
+          {
+            "ephemeralDiskSpec": undefined,
+            "mode": 2,
+            "name": "data",
+            "objectStorage": {
+              "bucketId": "my-bucket",
+              "prefix": "",
+            },
+          },
+          {
+            "ephemeralDiskSpec": undefined,
+            "mode": 1,
+            "name": "images",
+            "objectStorage": {
+              "bucketId": "my-bucket",
+              "prefix": "photos",
+            },
+          },
+        ],
+        "namedServiceAccounts": {},
+        "package": undefined,
+        "resources": {
+          "memory": 134217728,
+        },
+        "runtime": "nodejs16",
+        "secrets": [],
+        "serviceAccountId": "",
+        "storageMounts": [],
+        "tag": [],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;
+
+exports[`characterization records SDK requests: required inputs only, inline upload, SA JSON credentials 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": undefined,
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "",
+          "subnetId": [],
+        },
+        "content": "bytes:22",
+        "description": "",
+        "entrypoint": "index.handler",
+        "environment": {},
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 5,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": false,
+          "folderId": undefined,
+          "logGroupId": "",
+          "minLevel": 0,
+        },
+        "metadataOptions": undefined,
+        "mounts": [],
+        "namedServiceAccounts": {},
+        "package": undefined,
+        "resources": {
+          "memory": 134217728,
+        },
+        "runtime": "nodejs16",
+        "secrets": [],
+        "serviceAccountId": "",
+        "storageMounts": [],
+        "tag": [],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;
+
+exports[`characterization records SDK requests: secrets with explicit version 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": undefined,
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "",
+          "subnetId": [],
+        },
+        "content": "bytes:22",
+        "description": "",
+        "entrypoint": "index.handler",
+        "environment": {},
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 5,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": false,
+          "folderId": undefined,
+          "logGroupId": "",
+          "minLevel": 0,
+        },
+        "metadataOptions": undefined,
+        "mounts": [],
+        "namedServiceAccounts": {},
+        "package": undefined,
+        "resources": {
+          "memory": 134217728,
+        },
+        "runtime": "nodejs16",
+        "secrets": [
+          {
+            "environmentVariable": "ENV_VAR_1",
+            "id": "secret-id",
+            "key": "VAR_1",
+            "versionId": "verid",
+          },
+        ],
+        "serviceAccountId": "",
+        "storageMounts": [],
+        "tag": [],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;
+
+exports[`characterization records SDK requests: secrets with latest version resolved 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": undefined,
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "",
+          "subnetId": [],
+        },
+        "content": "bytes:22",
+        "description": "",
+        "entrypoint": "index.handler",
+        "environment": {},
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 5,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": false,
+          "folderId": undefined,
+          "logGroupId": "",
+          "minLevel": 0,
+        },
+        "metadataOptions": undefined,
+        "mounts": [],
+        "namedServiceAccounts": {},
+        "package": undefined,
+        "resources": {
+          "memory": 134217728,
+        },
+        "runtime": "nodejs16",
+        "secrets": [
+          {
+            "environmentVariable": "ENV_VAR_1",
+            "id": "secret-id",
+            "key": "VAR_1",
+            "versionId": "v2",
+          },
+        ],
+        "serviceAccountId": "",
+        "storageMounts": [],
+        "tag": [],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;
+
+exports[`characterization records SDK requests: service account resolved by name 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": undefined,
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "",
+          "subnetId": [],
+        },
+        "content": "bytes:22",
+        "description": "",
+        "entrypoint": "index.handler",
+        "environment": {},
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 5,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": false,
+          "folderId": undefined,
+          "logGroupId": "",
+          "minLevel": 0,
+        },
+        "metadataOptions": undefined,
+        "mounts": [],
+        "namedServiceAccounts": {},
+        "package": undefined,
+        "resources": {
+          "memory": 134217728,
+        },
+        "runtime": "nodejs16",
+        "secrets": [],
+        "serviceAccountId": "serviceaccountid",
+        "storageMounts": [],
+        "tag": [],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [
+    [
+      {
+        "filter": "name = "service-account-name"",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+}
+`;
+
+exports[`characterization records SDK requests: version creation fails 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": undefined,
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "",
+          "subnetId": [],
+        },
+        "content": "bytes:22",
+        "description": "",
+        "entrypoint": "index.handler",
+        "environment": {},
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 5,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": false,
+          "folderId": undefined,
+          "logGroupId": "",
+          "minLevel": 0,
+        },
+        "metadataOptions": undefined,
+        "mounts": [],
+        "namedServiceAccounts": {},
+        "package": undefined,
+        "resources": {
+          "memory": 134217728,
+        },
+        "runtime": "nodejs16",
+        "secrets": [],
+        "serviceAccountId": "",
+        "storageMounts": [],
+        "tag": [],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;
+
+exports[`characterization records SDK requests: workload identity federation credentials 1`] = `
+{
+  "createFunction": [
+    [
+      {
+        "description": "Created from some-owner/some-repo",
+        "folderId": "folderid",
+        "labels": {},
+        "name": "my-function",
+      },
+    ],
+  ],
+  "createVersion": [
+    [
+      {
+        "asyncInvocationConfig": undefined,
+        "concurrency": 0,
+        "connectivity": {
+          "networkId": "",
+          "subnetId": [],
+        },
+        "content": "bytes:22",
+        "description": "",
+        "entrypoint": "index.handler",
+        "environment": {},
+        "executionTimeout": {
+          "nanos": 0,
+          "seconds": 5,
+        },
+        "functionId": "functionid",
+        "logOptions": {
+          "disabled": false,
+          "folderId": undefined,
+          "logGroupId": "",
+          "minLevel": 0,
+        },
+        "metadataOptions": undefined,
+        "mounts": [],
+        "namedServiceAccounts": {},
+        "package": undefined,
+        "resources": {
+          "memory": 134217728,
+        },
+        "runtime": "nodejs16",
+        "secrets": [],
+        "serviceAccountId": "",
+        "storageMounts": [],
+        "tag": [],
+        "tmpfsSize": 0,
+        "versionId": undefined,
+      },
+    ],
+  ],
+  "listFunctions": [
+    [
+      {
+        "filter": "name = 'my-function'",
+        "folderId": "folderid",
+        "pageSize": 0,
+        "pageToken": "",
+      },
+    ],
+  ],
+  "listServiceAccounts": [],
+}
+`;

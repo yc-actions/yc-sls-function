@@ -96,7 +96,10 @@ Thumbs.db
 
 # Ignore built ts files
 __tests__/runner/*
-lib/**/*
 
 .idea
 key.json
+
+# Agent scratch: worktrees and subagent-driven-development workspaces
+.claude/worktrees/
+.superpowers/

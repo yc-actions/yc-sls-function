@@ -1,0 +1,16 @@
+title = "yc-sls-function gitleaks config"
+
+# Keep every default rule; this file only narrows what they may flag.
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+Fixtures for the environment-variable parser. These are base64 of literal
+descriptions of the case under test - decoding YmFzZTY0X2VuY29kZWRf... yields
+"base64_encoded_with_equal_sign_1" and similar. They exist to pin down how the
+parser splits on "=" when the value itself contains padding, so they cannot be
+shortened or masked without destroying the test. Scoped by regex rather than by
+path so a genuine credential added to this same file is still caught.
+"""
+regexes = ['''YmFzZTY0X2VuY29kZWRf''', '''zZTY0X2VuY29kZWRf''']

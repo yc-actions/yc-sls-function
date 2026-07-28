@@ -1,0 +1,24 @@
+# Vulnerabilities that are known, assessed, and deliberately not fixed yet.
+# Entries here are suppressed for everyone, so each one needs a reason and an
+# owner in the PR that adds it. Prefer upgrading the dependency.
+
+# CVE-2026-14257 - ReDoS in brace-expansion <= 5.0.7, fixed in 5.0.8.
+#
+# The tree holds two copies. The hoisted one is already 5.0.8; what Trivy
+# flags is 2.1.2, nested at two production sites under `archiver`, which this
+# action uses to zip the function source:
+#
+#     archiver-utils -> brace-expansion 2.1.2
+#     readdir-glob   -> brace-expansion 2.1.2
+#
+# The `include`/`exclude` inputs are the only attacker-influenceable patterns
+# here, and they do not reach those copies: src/zip.ts passes them to glob@13,
+# which resolves minimatch@10 against the hoisted brace-expansion@5.0.8. The
+# 2.1.2 copies are reached only by archiver walking a directory it was handed,
+# with patterns archiver supplies itself. That lowers the urgency; it is not a
+# proof of unreachability, and the copies should still be upgraded.
+#
+# Not fixed here because patching it means forcing a resolution that changes
+# the production dependency tree, and the PR this arrived in is a rewrite meant
+# to be behavior-neutral. Should be done as its own change.
+CVE-2026-14257

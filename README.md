@@ -1,13 +1,14 @@
-## GitHub Action to deploy Serverless Function to Yandex Cloud
+# GitHub Action to deploy Serverless Function to Yandex Cloud
 
 The action finds or creates Serverless Function in the given folder in Yandex Cloud and deploys new version.
 
-**Table of Contents**
+## Table of Contents
 
 <!-- toc -->
 
 - [Usage](#usage)
 - [Permissions](#permissions)
+- [Development](#development)
 - [License Summary](#license-summary)
 
 <!-- tocstop -->
@@ -15,29 +16,29 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
 ## Usage
 
 ```yaml
-    - name: Deploy Function
-      id: sls-func
-      uses: yc-actions/yc-sls-function@v4
-      with:
-        yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-        bucket: ${{ secrets.BUCKET }}
-        folder-id: 'b1g*********'
-        function-name: 'test-function'
-        runtime: 'nodejs16'
-        memory: '256Mb'
-        entrypoint: 'src/main.handler'
-        environment: |
+- name: Deploy Function
+  id: sls-func
+  uses: yc-actions/yc-sls-function@v5
+  with:
+      yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+      bucket: ${{ secrets.BUCKET }}
+      folder-id: 'b1g*********'
+      function-name: 'test-function'
+      runtime: 'nodejs16'
+      memory: '256Mb'
+      entrypoint: 'src/main.handler'
+      environment: |
           DEBUG=True
           COUNT=1
-        include: |
+      include: |
           ./src
           package.json
-        exclude: |
+      exclude: |
           **/*.ts
-        tags: |
+      tags: |
           ${{ GITHUB_SHA::6 }}
           foo
-        secrets: |
+      secrets: |
           DB_PASSWORD=lockbox-secret-id/latest/password
           API_KEY=lockbox-secret-id/abcdef123456/api_key
 ```
@@ -46,19 +47,24 @@ The action finds or creates Serverless Function in the given folder in Yandex Cl
 
 You can specify Lockbox secrets for your function using the `secrets` input. The format is:
 
-```
+```text
 <ENV_VAR>=<lockbox-secret-id>/<version-id>/<key>
 ```
 
 **New Feature:**
-- You can now use `latest` as the `<version-id>` to automatically use the most recent version of the secret at deploy time.
+
+- You can now use `latest` as the `<version-id>` to automatically use the most recent version of the secret at deploy
+  time.
 - Example:
-  ```
-  secrets: |
-    DB_PASSWORD=lockbox-secret-id/latest/password
-    API_KEY=lockbox-secret-id/abcdef123456/api_key
-  ```
-  In this example, `DB_PASSWORD` will always use the latest version of the secret, while `API_KEY` uses a specific version.
+
+    ```yaml
+    secrets: |
+        DB_PASSWORD=lockbox-secret-id/latest/password
+        API_KEY=lockbox-secret-id/abcdef123456/api_key
+    ```
+
+    In this example, `DB_PASSWORD` will always use the latest version of the secret, while `API_KEY` uses a specific
+    version.
 
 > **Note:** If `latest` is specified and no versions are found for the secret, the deployment will fail with an error.
 
@@ -66,16 +72,19 @@ You can specify Lockbox secrets for your function using the `secrets` input. The
 
 Each line in the `mounts` input should be in the form:
 
-```
+```text
 <mount-point>:<bucket>[/<prefix>][:ro]
 ```
-- `mount-point` (required): Directory name to mount the bucket to (will be available as `/function/storage/<mount-point>`).
+
+- `mount-point` (required): Directory name to mount the bucket to (will be available as
+  `/function/storage/<mount-point>`).
 - `bucket` (required): Name of the Object Storage bucket.
 - `prefix` (optional): Prefix within the bucket to mount (leave empty to mount the entire bucket).
 - `ro` (optional): If present, mount is read-only. Otherwise, mount is read-write.
 
 **Examples:**
-```
+
+```text
 data:my-bucket
 images:my-bucket/photos
 logs:my-bucket:ro
@@ -85,75 +94,76 @@ mount:bucket/prefix:ro
 ```
 
 #### Example Usage
+
 ```yaml
 - name: Deploy Function with Object Storage Mount
-  uses: yc-actions/yc-sls-function@v4
+  uses: yc-actions/yc-sls-function@v5
   with:
-    mounts: |
-      data:my-bucket
-      images:my-bucket/photos
-      logs:my-bucket:ro
-      images:my-bucket/photos:ro
-      mount:bucket/prefix
-      mount:bucket/prefix:ro
+      mounts: |
+          data:my-bucket
+          images:my-bucket/photos
+          logs:my-bucket:ro
+          images:my-bucket/photos:ro
+          mount:bucket/prefix
+          mount:bucket/prefix:ro
 ```
 
 ### Authorization
-One of `yc-sa-json-credentials`, `yc-iam-token` or `yc-sa-id` should be provided depending on the authentication method
-you
-want to use. The action will use the first one it finds.
 
-* `yc-sa-json-credentials` should contain JSON with authorized key for Service Account. More info
-  in [Yandex Cloud IAM documentation](https://yandex.cloud/en/docs/iam/operations/authentication/manage-authorized-keys#cli_1).
-* `yc-iam-token` should contain IAM token. It can be obtained using `yc iam create-token` command or using
+One of `yc-sa-json-credentials`, `yc-iam-token` or `yc-sa-id` should be provided depending on the authentication method
+you want to use. The action will use the first one it finds.
+
+- `yc-sa-json-credentials` should contain JSON with authorized key for Service Account. More info in
+  [Yandex Cloud IAM documentation](https://yandex.cloud/en/docs/iam/operations/authentication/manage-authorized-keys#cli_1).
+- `yc-iam-token` should contain IAM token. It can be obtained using `yc iam create-token` command or using
   [yc-actions/yc-iam-token-fed](https://github.com/yc-actions/yc-iam-token-fed)
 
 ```yaml
-  - name: Get Yandex Cloud IAM token
-    id: get-iam-token
-    uses: docker://ghcr.io/yc-actions/yc-iam-token-fed:1.0.0
-    with:
+- name: Get Yandex Cloud IAM token
+  id: get-iam-token
+  uses: docker://ghcr.io/yc-actions/yc-iam-token-fed:1.0.0
+  with:
       yc-sa-id: aje***
 ```
 
-* `yc-sa-id` should contain Service Account ID. It can be obtained using `yc iam service-accounts list` command. It is
-  used to exchange GitHub token for IAM token using Workload Identity Federation. More info
-  in [Yandex Cloud IAM documentation](https://yandex.cloud/ru/docs/iam/concepts/workload-identity).
+- `yc-sa-id` should contain Service Account ID. It can be obtained using `yc iam service-accounts list` command. It is
+  used to exchange GitHub token for IAM token using Workload Identity Federation. More info in
+  [Yandex Cloud IAM documentation](https://yandex.cloud/ru/docs/iam/concepts/workload-identity).
 
 ### Async invocation
 
 To make the function be able to be invoked asynchronously, you need to set the `async` input parameter to `true`.
 
 ```yaml
-    - name: Deploy Function
-      id: sls-func
-      uses: yc-actions/yc-sls-function@v4
-      with:
-        yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-        bucket: ${{ secrets.BUCKET }}
-        folder-id: 'b1g*********'
-        function-name: 'test-function'
-        runtime: 'nodejs16'
-        memory: '256Mb'
-        entrypoint: 'src/main.handler'
-        environment: |
+- name: Deploy Function
+  id: sls-func
+  uses: yc-actions/yc-sls-function@v5
+  with:
+      yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+      bucket: ${{ secrets.BUCKET }}
+      folder-id: 'b1g*********'
+      function-name: 'test-function'
+      runtime: 'nodejs16'
+      memory: '256Mb'
+      entrypoint: 'src/main.handler'
+      environment: |
           DEBUG=True
           COUNT=1
-        include: |
+      include: |
           ./src
           package.json
-        exclude: |
+      exclude: |
           **/*.ts
-        tags: |
+      tags: |
           ${{ GITHUB_SHA::6 }}
           foo
-        async: true
+      async: true
 ```
 
 Also, you can provide additional parameters for async invocation:
 
 | **Input Name**          | **Description**                                                                                                   | **Default** |
-|-------------------------|-------------------------------------------------------------------------------------------------------------------|-------------|
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------- |
 | `async`                 | Enable async invocation.                                                                                          | `'false'`   |
 | `async-sa-id`           | Service account with permission to invoke the function. Defaults to the default service account if not set.       | `''`        |
 | `async-sa-name`         | Service account name with permission to invoke the function. Use either this or `async-sa-id`.                    | `''`        |
@@ -171,13 +181,13 @@ See [action.yml](action.yml) for the full documentation for this action's inputs
 
 ### Deploy time permissions
 
-To perform this action, the service account on behalf of which we are acting must have
-the `functions.editor` role or higher.
+To perform this action, the service account on behalf of which we are acting must have the `functions.editor` role or
+higher.
 
 Additionally, you may need to grant the following optional roles depending on your specific needs:
 
 | Optional Role              | Required For                                                                           |
-|----------------------------|----------------------------------------------------------------------------------------|
+| -------------------------- | -------------------------------------------------------------------------------------- |
 | `iam.serviceAccounts.user` | Providing the service account ID in parameters, ensuring access to the service account |
 | `vpc.user`                 | Deploying the function in a VPC with a specified network ID                            |
 | `functions.admin`          | Making the function public                                                             |
@@ -187,11 +197,22 @@ Additionally, you may need to grant the following optional roles depending on yo
 The service account provided to function via `service-account` parameter must have the following roles:
 
 | Required Role                 | Required For                                                        |
-|-------------------------------|---------------------------------------------------------------------|
+| ----------------------------- | ------------------------------------------------------------------- |
 | `lockbox.payloadViewer`       | To access the Lockbox secrets.                                      |
 | `kms.keys.encrypterDecrypter` | To decrypt the Lockbox secrets, if they are encrypted with KMS key. |
 | `storage.viewer`              | To mount a bucket in read-only mode (`:ro` in mounts input).        |
 | `storage.uploader`            | To mount a bucket in read-write mode (default, or no `:ro`).        |
+
+## Development
+
+This action requires Node.js 24 to build and test.
+
+- `npm run bundle` — format the repository and rebuild `dist/index.js`. Run this before committing any change under
+  `src/`, since `dist/` is what GitHub Actions executes.
+- `npm test` — run the Jest suite.
+- `npm run lint` — run ESLint.
+- `npm run local-action` — run the action locally against a `.env` file. Copy `.env.example` to `.env`, fill in
+  credentials and inputs, then run the command.
 
 ## License Summary
 

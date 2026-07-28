@@ -1,0 +1,73 @@
+name: Continuous Integration
+
+on:
+    pull_request:
+        branches:
+            - main
+    push:
+        branches:
+            - main
+
+permissions:
+    contents: read
+
+jobs:
+    test-typescript:
+        name: TypeScript Tests
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              id: checkout
+              uses: actions/checkout@v7
+
+            - name: Setup Node.js
+              id: setup-node
+              uses: actions/setup-node@v7
+              with:
+                  node-version-file: .node-version
+                  cache: npm
+
+            - name: Install Dependencies
+              id: npm-ci
+              run: npm ci
+
+            - name: Check Format
+              id: npm-format-check
+              run: npm run format:check
+
+            - name: Lint
+              id: npm-lint
+              run: npm run lint
+
+            - name: Test
+              id: npm-ci-test
+              run: npm run ci-test
+
+    test-bundle:
+        name: Bundle Smoke Test
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              id: checkout
+              uses: actions/checkout@v7
+
+            - name: Setup Node.js
+              id: setup-node
+              uses: actions/setup-node@v7
+              with:
+                  node-version-file: .node-version
+                  cache: npm
+
+            - name: Install Dependencies
+              id: npm-ci
+              run: npm ci
+
+            - name: Build Bundle
+              id: package
+              run: npm run package
+
+            - name: Run Bundle Smoke Test
+              id: smoke
+              run: npm run ci-test -- __tests__/bundle.test.ts --coverage=false

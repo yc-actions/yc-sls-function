@@ -1,4 +1,4 @@
-import { parseServiceAccountJsonFile, ServiceAccountJsonFileContents } from '../src/parse'
+import { parseServiceAccountJsonFile, ServiceAccountJsonFileContents } from '../src/parse/index.js'
 
 describe('fromServiceAccountJsonFile', () => {
     it('should return an object with the same values when all required fields are present', () => {

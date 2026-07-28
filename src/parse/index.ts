@@ -6,10 +6,10 @@
  * @module
  */
 
-export { parseMounts } from './mounts'
-export { parseIgnoreGlobPatterns } from './glob-patterns'
-export { parseEnvironmentVariables } from './environment-variables'
-export { parseLockboxVariables, type Secret } from './lockbox-variables'
-export { parseLogLevel } from './log-level'
-export { parseMemory, GB, KB, MB } from './memory'
-export { parseServiceAccountJsonFile, type ServiceAccountJsonFileContents } from './sa-json'
+export { parseMounts } from './mounts.js'
+export { parseIgnoreGlobPatterns } from './glob-patterns.js'
+export { parseEnvironmentVariables } from './environment-variables.js'
+export { parseLockboxVariables, type Secret } from './lockbox-variables.js'
+export { parseLogLevel } from './log-level.js'
+export { parseMemory, GB, KB, MB } from './memory.js'
+export { parseServiceAccountJsonFile, type ServiceAccountJsonFileContents } from './sa-json.js'

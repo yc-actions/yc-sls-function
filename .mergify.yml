@@ -1,18 +1,21 @@
 pull_request_rules:
-
-  - name: Automatically approve and merge Dependabot PRs
-    conditions:
-      - base=main
-      - author=dependabot[bot]
-      - check-success=check-dist
-      - check-success=build
-      - -title~=(WIP|wip)
-      - -label~=(blocked|do-not-merge)
-      - -merged
-      - -closed
-    actions:
-      review:
-        type: APPROVE
-      merge:
-        method: squash
-
+    # These check-success conditions must match the `name:` GitHub Actions publishes for each
+    # job (the job id is used only when a job has no `name:`). If you rename a job in the
+    # workflows below, update the matching condition here too, or this rule silently stops
+    # gating merges on that check.
+    - name: Automatically approve and merge Dependabot PRs
+      conditions:
+          - base=main
+          - author=dependabot[bot]
+          - check-success=Check dist/
+          - check-success=TypeScript Tests
+          - check-success=Bundle Smoke Test
+          - -title~=(WIP|wip)
+          - -label~=(blocked|do-not-merge)
+          - -merged
+          - -closed
+      actions:
+          review:
+              type: APPROVE
+          merge:
+              method: squash
