@@ -24,7 +24,7 @@ describe('dist/index.js', () => {
         const summaryFile = path.join(dir, 'summary.md')
         writeFileSync(summaryFile, '')
 
-        let stdout = ''
+        let stdout: string
         let code: number | undefined
         try {
             const result = await execFileAsync(process.execPath, ['dist/index.js'], {
